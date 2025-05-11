@@ -4,7 +4,9 @@
 </a>
 
 <p align="center">
-    Test SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+
+    MASTER SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+
 </p>
 
 <p align="center">
