@@ -85,5 +85,19 @@ export function getTrailingMessageId({
 }
 
 export function sanitizeText(text: string) {
-  return text.replace('<has_function_call>', '');
+  try {
+    // Try to parse if it's a JSON string
+    const parsed = JSON.parse(text);
+    if (
+      Array.isArray(parsed) &&
+      parsed.length > 0 &&
+      parsed[0].type === 'text'
+    ) {
+      return parsed[0].text;
+    }
+    return text;
+  } catch {
+    // If it's not JSON, just remove function call markers
+    return text.replace('<has_function_call>', '');
+  }
 }

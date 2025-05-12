@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   experimental: {
-    ppr: true,
+    ppr: false,
   },
   images: {
     remotePatterns: [
@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         hostname: 'avatar.vercel.sh',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    // Suppress punycode deprecation warning
+    config.ignoreWarnings = [{ module: /node_modules\/punycode/ }];
+    return config;
   },
 };
 
