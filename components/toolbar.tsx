@@ -8,7 +8,10 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import type { Dispatch, SetStateAction , memo, type ReactNode, useEffect, useRef, useState } from 'react';
+// eslint-disable-next-line import/no-duplicates
+import type { Dispatch, SetStateAction } from 'react';
+// eslint-disable-next-line import/no-duplicates
+import { memo, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { nanoid } from 'nanoid';
 import {
