@@ -6,8 +6,10 @@ import {
   type LanguageModelV1CallOptions,
   type LanguageModelV1StreamPart,
   type ImageModel,
+  type ImageModelCallOptions,
+  type ImageModelCallWarning,
 } from 'ai';
-import OpenAI from 'openai';
+import OpenAIClient from 'openai';
 import { isTestEnvironment } from '../constants';
 import {
   artifactModel,
@@ -20,7 +22,7 @@ if (!process.env.OPENAI_API_KEY) {
   throw new Error('OPENAI_API_KEY is not set in environment variables');
 }
 
-const openai = new OpenAI({
+const openai = new OpenAIClient({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
@@ -28,7 +30,7 @@ const createChatCompletion: LanguageModelV1 = {
   specificationVersion: 'v1',
   provider: 'openai',
   modelId: 'gpt-4-turbo-preview',
-  defaultObjectGenerationMode: 'text' as const,
+  defaultObjectGenerationMode: 'text-delta' as const,
   doGenerate: async () => {
     throw new Error('Not implemented');
   },
@@ -53,7 +55,7 @@ const createChatCompletion: LanguageModelV1 = {
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
-        messages: messages as any, // Type assertion needed due to complex message types
+        messages: messages as any,
         temperature: 0.7,
         stream: true,
       });
@@ -110,23 +112,22 @@ const createImage: ImageModel = {
   specificationVersion: 'v1',
   provider: 'openai',
   modelId: 'dall-e-3',
-  doGenerate: async (prompt: string) => {
+  maxImagesPerCall: 1,
+  doGenerate: async (options) => {
     try {
       const response = await openai.images.generate({
         model: 'dall-e-3',
-        prompt,
+        prompt: options.prompt,
         n: 1,
         size: '1024x1024',
       });
       return {
         images: response.data?.map((img) => img.url || '') || [],
-        rawCall: {
-          rawPrompt: prompt,
-          rawSettings: {
-            model: 'dall-e-3',
-            n: 1,
-            size: '1024x1024',
-          },
+        warnings: [],
+        response: {
+          timestamp: new Date(),
+          modelId: 'dall-e-3',
+          headers: undefined,
         },
       };
     } catch (error: any) {
