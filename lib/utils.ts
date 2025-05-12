@@ -37,6 +37,15 @@ export function getLocalStorage(key: string) {
 }
 
 export function generateUUID(): string {
+  if (typeof window === 'undefined') {
+    // Server-side: Use a more deterministic approach
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = 0; // Use 0 for server-side to avoid hydration mismatch
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+  // Client-side: Use Math.random
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -56,9 +65,10 @@ export function getDocumentTimestampByIndex(
   documents: Array<Document>,
   index: number,
 ) {
-  if (!documents) return new Date();
-  if (index > documents.length) return new Date();
-
+  if (!documents || index > documents.length) {
+    // Use a fixed date for server-side rendering to avoid hydration mismatch
+    return new Date('2024-01-01T00:00:00.000Z');
+  }
   return documents[index].createdAt;
 }
 

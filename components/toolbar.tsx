@@ -8,15 +8,8 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import {
-  type Dispatch,
-  memo,
-  ReactNode,
-  type SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+import { memo, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { nanoid } from 'nanoid';
 import {
@@ -27,9 +20,10 @@ import {
 } from '@/components/ui/tooltip';
 
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons';
-import { artifactDefinitions, ArtifactKind } from './artifact';
-import { ArtifactToolbarItem } from './create-artifact';
-import { UseChatHelpers } from '@ai-sdk/react';
+import type { ArtifactKind } from './artifact';
+import { artifactDefinitions } from './artifact';
+import type { ArtifactToolbarItem } from './create-artifact';
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 type ToolProps = {
   description: string;
@@ -59,6 +53,12 @@ const Tool = ({
   onClick,
 }: ToolProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [randomArr, setRandomArr] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Generate random array on client side only
+    setRandomArr([...Array(6)].map(() => nanoid(5)));
+  }, []);
 
   useEffect(() => {
     if (selectedTool !== description) {
@@ -131,8 +131,6 @@ const Tool = ({
   );
 };
 
-const randomArr = [...Array(6)].map((x) => nanoid(5));
-
 const ReadingLevelSelector = ({
   setSelectedTool,
   append,
@@ -158,6 +156,12 @@ const ReadingLevelSelector = ({
   const [currentLevel, setCurrentLevel] = useState(2);
   const [hasUserSelectedLevel, setHasUserSelectedLevel] =
     useState<boolean>(false);
+  const [randomArr, setRandomArr] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Generate random array on client side only
+    setRandomArr([...Array(6)].map(() => nanoid(5)));
+  }, []);
 
   useEffect(() => {
     const unsubscribe = yToLevel.on('change', (latest) => {

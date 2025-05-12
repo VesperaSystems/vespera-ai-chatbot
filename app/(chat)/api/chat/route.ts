@@ -89,9 +89,18 @@ export async function POST(request: Request) {
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new Response(
-        'You have exceeded your maximum number of messages for the day! Please try again later.',
+        JSON.stringify({
+          error:
+            'You have exceeded your maximum number of messages for the day!',
+          message:
+            'Please try again later or upgrade your subscription to continue chatting.',
+          link: '/subscription',
+        }),
         {
           status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
       );
     }

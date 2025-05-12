@@ -17,7 +17,7 @@ export function useScrollToBottom() {
     useSWR<ScrollFlag>('messages:should-scroll', null, { fallbackData: false });
 
   useEffect(() => {
-    if (scrollBehavior) {
+    if (scrollBehavior && typeof window !== 'undefined') {
       endRef.current?.scrollIntoView({ behavior: scrollBehavior });
       setScrollBehavior(false);
     }
@@ -25,7 +25,9 @@ export function useScrollToBottom() {
 
   const scrollToBottom = useCallback(
     (scrollBehavior: ScrollBehavior = 'smooth') => {
-      setScrollBehavior(scrollBehavior);
+      if (typeof window !== 'undefined') {
+        setScrollBehavior(scrollBehavior);
+      }
     },
     [setScrollBehavior],
   );
