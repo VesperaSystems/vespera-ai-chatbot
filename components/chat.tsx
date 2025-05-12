@@ -95,13 +95,13 @@ export function Chat({
         } else {
           toast({
             type: 'error',
-            description: error.message,
+            description: `${error.message}`,
           });
         }
       } catch {
         toast({
           type: 'error',
-          description: error.message,
+          description: `${error.message}`,
         });
       }
     },

@@ -8,8 +8,7 @@ import {
   useMotionValue,
   useTransform,
 } from 'framer-motion';
-import type { Dispatch, SetStateAction } from 'react';
-import { memo, type ReactNode, useEffect, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction , memo, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { nanoid } from 'nanoid';
 import {
