@@ -72,10 +72,38 @@ export function Chat({
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
-      toast({
-        type: 'error',
-        description: error.message,
-      });
+      try {
+        const errorData = JSON.parse(error.message);
+        if (errorData.error && errorData.message) {
+          toast({
+            type: 'error',
+            description: (
+              <div className="flex flex-col gap-2">
+                <p>{errorData.error}</p>
+                <p>{errorData.message}</p>
+                {errorData.link && (
+                  <a
+                    href={errorData.link}
+                    className="text-primary hover:underline"
+                  >
+                    Upgrade your subscription
+                  </a>
+                )}
+              </div>
+            ),
+          });
+        } else {
+          toast({
+            type: 'error',
+            description: error.message,
+          });
+        }
+      } catch {
+        toast({
+          type: 'error',
+          description: error.message,
+        });
+      }
     },
   });
 
