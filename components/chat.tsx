@@ -19,6 +19,13 @@ import type { Session } from 'next-auth';
 import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
+import { ReactNode } from 'react';
+
+interface ToastProps {
+  id: string | number;
+  type: 'success' | 'error';
+  description: string | ReactNode;
+}
 
 export function Chat({
   id,
