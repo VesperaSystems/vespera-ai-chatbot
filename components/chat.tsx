@@ -84,20 +84,7 @@ export function Chat({
         if (errorData.error && errorData.message) {
           toast({
             type: 'error',
-            description: (
-              <div className="flex flex-col gap-2">
-                <p>{errorData.error}</p>
-                <p>{errorData.message}</p>
-                {errorData.link && (
-                  <a
-                    href={errorData.link}
-                    className="text-primary hover:underline"
-                  >
-                    Upgrade your subscription
-                  </a>
-                )}
-              </div>
-            ),
+            description: `${errorData.error}: ${errorData.message}`,
           });
         } else {
           toast({
