@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const json = await request.json();
     requestBody = postRequestBodySchema.parse(json);
   } catch (_) {
-    return new Response('Invalid request body', { status: 400 });
+    return new Response('Error: Invalid request body format', { status: 400 });
   }
 
   try {
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const session = await auth();
 
     if (!session?.user) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response('Error: User not authenticated', { status: 401 });
     }
 
     const userType: UserType = session.user.type;
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new Response(
-        'You have exceeded your maximum number of messages for the day! Please try again later.',
+        'Error: Daily message limit exceeded. Please try again later.',
         {
           status: 429,
         },
@@ -111,7 +111,9 @@ export async function POST(request: Request) {
       });
     } else {
       if (chat.userId !== session.user.id) {
-        return new Response('Forbidden', { status: 403 });
+        return new Response('Error: Access denied to this chat', {
+          status: 403,
+        });
       }
     }
 
@@ -223,8 +225,9 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
-        return 'Oops, an error occurred!';
+      onError: (error) => {
+        console.error('Stream Error:', error);
+        return `Error: ${error instanceof Error ? error.message : 'An unexpected error occurred'}`;
       },
     });
 
@@ -237,10 +240,14 @@ export async function POST(request: Request) {
     } else {
       return new Response(stream);
     }
-  } catch (_) {
-    return new Response('An error occurred while processing your request!', {
-      status: 500,
-    });
+  } catch (error) {
+    console.error('Chat API Error:', error);
+    return new Response(
+      `Error in chat processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      {
+        status: 500,
+      },
+    );
   }
 }
 
@@ -249,48 +256,52 @@ export async function GET(request: Request) {
   const resumeRequestedAt = new Date();
 
   if (!streamContext) {
-    return new Response(null, { status: 204 });
+    return new Response('Error: Stream context not available', { status: 204 });
   }
 
   const { searchParams } = new URL(request.url);
   const chatId = searchParams.get('chatId');
 
   if (!chatId) {
-    return new Response('id is required', { status: 400 });
+    return new Response('Error: Chat ID is required', { status: 400 });
   }
 
   const session = await auth();
 
   if (!session?.user) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Error: User not authenticated', { status: 401 });
   }
 
   let chat: Chat;
 
   try {
     chat = await getChatById({ id: chatId });
-  } catch {
-    return new Response('Not found', { status: 404 });
+  } catch (error) {
+    console.error('Chat GET Error:', error);
+    return new Response(
+      `Error fetching chat: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { status: 404 },
+    );
   }
 
   if (!chat) {
-    return new Response('Not found', { status: 404 });
+    return new Response('Error: Chat not found', { status: 404 });
   }
 
   if (chat.visibility === 'private' && chat.userId !== session.user.id) {
-    return new Response('Forbidden', { status: 403 });
+    return new Response('Error: Access denied to this chat', { status: 403 });
   }
 
   const streamIds = await getStreamIdsByChatId({ chatId });
 
   if (!streamIds.length) {
-    return new Response('No streams found', { status: 404 });
+    return new Response('Error: No chat streams found', { status: 404 });
   }
 
   const recentStreamId = streamIds.at(-1);
 
   if (!recentStreamId) {
-    return new Response('No recent stream found', { status: 404 });
+    return new Response('Error: No recent stream found', { status: 404 });
   }
 
   const emptyDataStream = createDataStream({
@@ -344,29 +355,32 @@ export async function DELETE(request: Request) {
   const id = searchParams.get('id');
 
   if (!id) {
-    return new Response('Not Found', { status: 404 });
+    return new Response('Error: Chat ID is required', { status: 404 });
   }
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Error: User not authenticated', { status: 401 });
   }
 
   try {
     const chat = await getChatById({ id });
 
     if (chat.userId !== session.user.id) {
-      return new Response('Forbidden', { status: 403 });
+      return new Response('Error: Access denied to this chat', { status: 403 });
     }
 
     const deletedChat = await deleteChatById({ id });
 
     return Response.json(deletedChat, { status: 200 });
   } catch (error) {
-    console.error(error);
-    return new Response('An error occurred while processing your request!', {
-      status: 500,
-    });
+    console.error('Chat DELETE Error:', error);
+    return new Response(
+      `Error deleting chat: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      {
+        status: 500,
+      },
+    );
   }
 }
