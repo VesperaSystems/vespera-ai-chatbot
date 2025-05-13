@@ -284,7 +284,7 @@ function PureMultimodalInput({
 
             if (status !== 'ready') {
               toast.error(
-                `Cannot send message: Model is currently ${status === 'in_progress' ? 'generating a response' : 'processing'}. Please wait until it finishes.`,
+                `Cannot send message: Model is currently ${status === 'streaming' ? 'generating a response' : 'processing'}. Please wait until it finishes.`,
               );
             } else {
               submitForm();

@@ -19,6 +19,13 @@ import type { Session } from 'next-auth';
 import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
+import { ReactNode } from 'react';
+
+interface ToastProps {
+  id: string | number;
+  type: 'success' | 'error';
+  description: string | ReactNode;
+}
 
 export function Chat({
   id,
@@ -77,31 +84,18 @@ export function Chat({
         if (errorData.error && errorData.message) {
           toast({
             type: 'error',
-            description: (
-              <div className="flex flex-col gap-2">
-                <p>{errorData.error}</p>
-                <p>{errorData.message}</p>
-                {errorData.link && (
-                  <a
-                    href={errorData.link}
-                    className="text-primary hover:underline"
-                  >
-                    Upgrade your subscription
-                  </a>
-                )}
-              </div>
-            ),
+            description: `${errorData.error}: ${errorData.message}`,
           });
         } else {
           toast({
             type: 'error',
-            description: error.message,
+            description: `${error.message}`,
           });
         }
       } catch {
         toast({
           type: 'error',
-          description: error.message,
+          description: `${error.message}`,
         });
       }
     },
