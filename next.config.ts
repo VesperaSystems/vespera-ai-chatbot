@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   experimental: {
     ppr: false,
+    turbo: false,
   },
   images: {
     remotePatterns: [
