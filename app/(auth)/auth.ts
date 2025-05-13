@@ -7,26 +7,22 @@ import { DUMMY_PASSWORD } from '@/lib/constants';
 
 export type UserType = 'regular';
 
+type ExtendedUser = {
+  id: string;
+  email: string;
+  type: UserType;
+};
+
 declare module 'next-auth' {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      type: UserType;
-    } & DefaultSession['user'];
+  interface Session {
+    user: ExtendedUser & DefaultSession['user'];
   }
 
-  interface User {
-    id: string;
-    email: string;
-    type: UserType;
-  }
+  interface User extends ExtendedUser {}
 }
 
 declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    type: UserType;
-  }
+  interface JWT extends ExtendedUser {}
 }
 
 export const {
