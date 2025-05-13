@@ -6,8 +6,6 @@ import {
   type LanguageModelV1CallOptions,
   type LanguageModelV1StreamPart,
   type ImageModel,
-  type ImageModelCallOptions,
-  type ImageModelCallWarning,
 } from 'ai';
 import OpenAIClient from 'openai';
 import { isTestEnvironment } from '../constants';
@@ -30,7 +28,7 @@ const createChatCompletion: LanguageModelV1 = {
   specificationVersion: 'v1',
   provider: 'openai',
   modelId: 'gpt-4-turbo-preview',
-  defaultObjectGenerationMode: 'text-delta' as const,
+  defaultObjectGenerationMode: 'json' as const,
   doGenerate: async () => {
     throw new Error('Not implemented');
   },
