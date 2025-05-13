@@ -5,11 +5,10 @@ import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 
-
 export type UserType = 'regular';
 
 declare module 'next-auth' {
-  interface Session {
+  interface Session extends DefaultSession {
     user: {
       id: string;
       type: UserType;
@@ -72,14 +71,14 @@ export const {
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      if (user) {
+      if (user?.id) {
         token.id = user.id;
         token.type = user.type;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token.id) {
         session.user.id = token.id;
         session.user.type = token.type;
       }
