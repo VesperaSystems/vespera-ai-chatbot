@@ -13,9 +13,9 @@ import { useSession } from 'next-auth/react';
 
 export default function Page() {
   const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
+  const { update: updateSession } = useSession();
 
   const [state, formAction] = useActionState<LoginActionState, FormData>(
     login,
@@ -23,8 +23,6 @@ export default function Page() {
       status: 'idle',
     },
   );
-
-  const { update: updateSession } = useSession();
 
   useEffect(() => {
     if (state.status === 'failed') {
@@ -37,12 +35,16 @@ export default function Page() {
         type: 'error',
         description: 'Failed validating your submission!',
       });
-    } else if (state.status === 'success') {
-      setIsSuccessful(true);
-      updateSession();
-      router.refresh();
     }
-  }, [router, state.status, updateSession]);
+  }, [state.status]);
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      setIsSuccessful(true);
+      // Force a hard navigation to ensure session is picked up
+      window.location.href = '/';
+    }
+  }, [state.status]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);

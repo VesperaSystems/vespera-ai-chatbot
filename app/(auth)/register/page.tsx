@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 
 import { AuthForm } from '@/components/auth-form';
@@ -9,11 +8,8 @@ import { SubmitButton } from '@/components/submit-button';
 
 import { register, type RegisterActionState } from '../actions';
 import { toast } from '@/components/toast';
-import { useSession } from 'next-auth/react';
 
 export default function Page() {
-  const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
 
@@ -23,8 +19,6 @@ export default function Page() {
       status: 'idle',
     },
   );
-
-  const { update: updateSession } = useSession();
 
   useEffect(() => {
     if (state.status === 'user_exists') {
@@ -36,14 +30,16 @@ export default function Page() {
         type: 'error',
         description: 'Failed validating your submission!',
       });
-    } else if (state.status === 'success') {
-      toast({ type: 'success', description: 'Account created successfully!' });
-
-      setIsSuccessful(true);
-      updateSession();
-      router.refresh();
     }
-  }, [router, state, updateSession]);
+  }, [state.status]);
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      setIsSuccessful(true);
+      // Force a hard navigation to ensure session is picked up
+      window.location.href = '/';
+    }
+  }, [state.status]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);
