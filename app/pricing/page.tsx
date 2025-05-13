@@ -35,22 +35,22 @@ export default function PricingPage() {
               $0.01 per message
             </p>
           </CardHeader>
-          <CardContent className="flex-grow">
+          <CardContent className="grow">
             <ul className="space-y-3">
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>99.99% availability</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Up to 200 messages per day</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Basic chat models</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>9 am - 6 pm support</span>
               </li>
             </ul>
@@ -73,22 +73,22 @@ export default function PricingPage() {
               $0.001 per message
             </p>
           </CardHeader>
-          <CardContent className="flex-grow">
+          <CardContent className="grow">
             <ul className="space-y-3">
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>99.999% availability</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Up to 1,000 messages per day</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Advanced chat models</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>24/7 technical support</span>
               </li>
             </ul>
@@ -113,22 +113,22 @@ export default function PricingPage() {
               $0.0001 per message
             </p>
           </CardHeader>
-          <CardContent className="flex-grow">
+          <CardContent className="grow">
             <ul className="space-y-3">
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>99.9999% availability</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Unlimited messages</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>Premium chat models</span>
               </li>
               <li className="flex items-center">
-                <Check className="mr-2 h-4 w-4 text-green-500" />
+                <Check className="mr-2 size-4 text-green-500" />
                 <span>24/7 all support</span>
               </li>
             </ul>

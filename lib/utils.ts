@@ -38,12 +38,9 @@ export function getLocalStorage(key: string) {
 
 export function generateUUID(): string {
   if (typeof window === 'undefined') {
-    // Server-side: Use a more deterministic approach
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = 0; // Use 0 for server-side to avoid hydration mismatch
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+    // Server-side: Use crypto for better randomness
+    const crypto = require('node:crypto');
+    return crypto.randomUUID();
   }
   // Client-side: Use Math.random
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
