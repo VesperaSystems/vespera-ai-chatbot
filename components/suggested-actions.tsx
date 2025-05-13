@@ -19,24 +19,27 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'Based on today’s macroeconomic news',
+      label: 'what sectors are likely to see increased volatility?',
+      action:
+        'Based on today’s macroeconomic news, what sectors are likely to see increased volatility?',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'Can you help me build a simple ',
+      label: `momentum trading strategy using Python`,
+      action: `Can you help me build a simple momentum trading strategy using Python`,
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
-      action: `Help me write an essay about silicon valley`,
+      title: 'What are the key differences between ',
+      label: `Sharpe ratio and Sortino ratio when evaluating risk?`,
+      action: `What are the key differences between Sharpe ratio and Sortino ratio when evaluating risk?`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
-      action: 'What is the weather in San Francisco?',
+      title:
+        'Which technical indicators are most reliable',
+      label: ' for identifying early trend reversals in stocks?',
+      action:
+        'Which technical indicators are most reliable for identifying early trend reversals in stocks?',
     },
   ];
 
