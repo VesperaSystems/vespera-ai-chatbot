@@ -37,7 +37,7 @@ function PureChatHeader({
     setMounted(true);
   }, []);
 
-  const showNewChatButton = mounted && (!open || windowWidth < 768);
+  const showNewChatButton = mounted && (windowWidth >= 768 || !open);
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
