@@ -7,7 +7,26 @@ import { CodeBlock } from './code-block';
 const components: Partial<Components> = {
   // @ts-expect-error
   code: CodeBlock,
-  pre: ({ children }) => <>{children}</>,
+  pre: ({ children }) => {
+    // If children is a code element, render it directly
+    if (React.isValidElement(children) && children.type === 'code') {
+      return children;
+    }
+    return <>{children}</>;
+  },
+  p: ({ children, ...props }) => {
+    // Check if children contains a code block
+    const hasCodeBlock = React.Children.toArray(children).some(
+      (child) => React.isValidElement(child) && child.type === CodeBlock,
+    );
+
+    // If it contains a code block, don't wrap in p tag
+    if (hasCodeBlock) {
+      return <>{children}</>;
+    }
+
+    return <p {...props}>{children}</p>;
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>

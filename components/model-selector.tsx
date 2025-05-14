@@ -14,7 +14,7 @@ import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { ENTITLEMENTS } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
 
 export function ModelSelector({
@@ -30,7 +30,7 @@ export function ModelSelector({
     useOptimistic(selectedModelId);
 
   const userType = session.user.type;
-  const { availableChatModelIds } = entitlementsByUserType[userType];
+  const { availableChatModelIds } = ENTITLEMENTS[userType];
 
   const availableChatModels = chatModels.filter((chatModel) =>
     availableChatModelIds.includes(chatModel.id),

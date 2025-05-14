@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/git-hooks.sh"
+
+pnpm run build 

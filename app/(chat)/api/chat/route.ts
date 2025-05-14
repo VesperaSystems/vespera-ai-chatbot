@@ -25,7 +25,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { ENTITLEMENTS } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       differenceInHours: 24,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    if (messageCount > ENTITLEMENTS[userType].maxMessagesPerDay) {
       return new Response(
         JSON.stringify({
           error:

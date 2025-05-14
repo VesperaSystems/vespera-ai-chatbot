@@ -26,7 +26,7 @@ export function CodeBlock({
           <code className="whitespace-pre-wrap break-words">
             {typeof children === 'string' ? children.trim() : children}
           </code>
-        </pre>
+        </pre>        
       </span>
     );
   } else {

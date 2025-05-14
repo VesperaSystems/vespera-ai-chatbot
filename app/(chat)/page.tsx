@@ -10,32 +10,13 @@ import { redirect } from 'next/navigation';
 export default async function Page() {
   const session = await auth();
 
-  if (!session) {
-    redirect('/api/auth/guest');
+  if (!session?.user) {
+    redirect('/login');
   }
 
   const id = generateUUID();
-
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
-
-  if (!modelIdFromCookie) {
-    return (
-      <>
-        <Chat
-          key={id}
-          id={id}
-          initialMessages={[]}
-          initialChatModel={DEFAULT_CHAT_MODEL}
-          initialVisibilityType="private"
-          isReadonly={false}
-          session={session}
-          autoResume={false}
-        />
-        <DataStreamHandler id={id} />
-      </>
-    );
-  }
 
   return (
     <>
@@ -43,7 +24,7 @@ export default async function Page() {
         key={id}
         id={id}
         initialMessages={[]}
-        initialChatModel={modelIdFromCookie.value}
+        initialChatModel={modelIdFromCookie?.value || DEFAULT_CHAT_MODEL}
         initialVisibilityType="private"
         isReadonly={false}
         session={session}

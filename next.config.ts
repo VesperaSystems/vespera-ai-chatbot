@@ -1,8 +1,11 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
+const config: NextConfig = {
   experimental: {
-    ppr: false,
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+    serverComponentsExternalPackages: ['bcrypt-ts'],
   },
   images: {
     remotePatterns: [
@@ -18,4 +21,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default config;

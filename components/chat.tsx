@@ -2,7 +2,13 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+  Children,
+  isValidElement,
+} from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -19,7 +25,6 @@ import type { Session } from 'next-auth';
 import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
-import { ReactNode } from 'react';
 
 interface ToastProps {
   id: string | number;

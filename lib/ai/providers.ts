@@ -52,7 +52,7 @@ const createChatCompletion: LanguageModelV1 = {
       });
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: createChatCompletion.modelId,
         messages: messages as any,
         temperature: 0.7,
         stream: true,
@@ -63,10 +63,28 @@ const createChatCompletion: LanguageModelV1 = {
           try {
             for await (const chunk of completion) {
               if (chunk.choices[0]?.delta?.content) {
-                controller.enqueue({
-                  type: 'text-delta',
-                  textDelta: chunk.choices[0].delta.content,
-                });
+                const content = chunk.choices[0].delta.content;
+                // Handle both plain text and JSON responses
+                try {
+                  const parsed = JSON.parse(content);
+                  if (parsed.type === 'text' && parsed.text) {
+                    controller.enqueue({
+                      type: 'text-delta',
+                      textDelta: parsed.text,
+                    });
+                  } else {
+                    controller.enqueue({
+                      type: 'text-delta',
+                      textDelta: content,
+                    });
+                  }
+                } catch {
+                  // If not JSON, send as plain text
+                  controller.enqueue({
+                    type: 'text-delta',
+                    textDelta: content,
+                  });
+                }
               }
             }
             controller.enqueue({
@@ -89,7 +107,7 @@ const createChatCompletion: LanguageModelV1 = {
         rawCall: {
           rawPrompt: messages,
           rawSettings: {
-            model: 'gpt-4-turbo-preview',
+            model: createChatCompletion.modelId,
             temperature: 0.7,
           },
         },
@@ -158,6 +176,14 @@ export const myProvider = isTestEnvironment
         }),
         'title-model': createChatCompletion,
         'artifact-model': createChatCompletion,
+        'gpt-3.5': {
+          ...createChatCompletion,
+          modelId: 'gpt-3.5-turbo',
+        },
+        'gpt-4': {
+          ...createChatCompletion,
+          modelId: 'gpt-4-turbo-preview',
+        },
       },
       imageModels: {
         'small-model': createImage,
