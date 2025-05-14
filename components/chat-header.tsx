@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
+import { useEffect, useState } from 'react';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
@@ -29,14 +30,20 @@ function PureChatHeader({
 }) {
   const router = useRouter();
   const { open } = useSidebar();
-
+  const [mounted, setMounted] = useState(false);
   const { width: windowWidth } = useWindowSize();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const showNewChatButton = mounted && (!open || windowWidth < 768);
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
       <SidebarToggle />
 
-      {(!open || windowWidth < 768) && (
+      {showNewChatButton && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -47,7 +54,7 @@ function PureChatHeader({
                 router.refresh();
               }}
             >
-              <PlusIcon />
+              <PlusIcon size={16} />
               <span className="md:sr-only">New Chat</span>
             </Button>
           </TooltipTrigger>

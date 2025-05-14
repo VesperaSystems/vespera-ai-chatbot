@@ -40,12 +40,17 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">User Management</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">User Management</h2>
+        <div className="text-sm text-muted-foreground">
+          {users.length} {users.length === 1 ? 'user' : 'users'}
+        </div>
+      </div>
       <div className="grid gap-4">
         {users.map((user) => (
           <div
             key={user.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{user.email}</p>

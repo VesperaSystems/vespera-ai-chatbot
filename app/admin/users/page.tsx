@@ -17,15 +17,21 @@ export default async function AdminUsersPage() {
   const users = await getAllUsers();
 
   return (
-    <div className="space-y-8 px-4 sm:px-6 lg:px-8">
-      <div>
-        <h2 className="text-2xl font-bold">Users</h2>
-        <p className="text-muted-foreground mt-2">
-          Manage user permissions and roles
-        </p>
-      </div>
-      <div className="max-w-7xl mx-auto">
-        <UserManagement users={users} />
+    <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="space-y-6">
+        <div className="border-b pb-4">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Admin Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Manage user permissions and roles
+          </p>
+        </div>
+        <div className="rounded-lg border bg-card">
+          <div className="p-4 sm:p-6">
+            <UserManagement users={users} />
+          </div>
+        </div>
       </div>
     </div>
   );

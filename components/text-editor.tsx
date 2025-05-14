@@ -146,7 +146,10 @@ function PureEditor({
   }, [suggestions, content]);
 
   return (
-    <div className="relative prose dark:prose-invert" ref={containerRef} />
+    <div
+      className="relative prose dark:prose-invert max-w-full overflow-x-auto px-4 sm:px-6 lg:px-8"
+      ref={containerRef}
+    />
   );
 }
 

@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { memo } from 'react';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
+import { PlusIcon } from './icons';
 
 interface SuggestedActionsProps {
   chatId: string;
@@ -19,10 +20,9 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'Based on today’s macroeconomic news',
-      label: 'what sectors are likely to see increased volatility?',
-      action:
-        'Based on today’s macroeconomic news, what sectors are likely to see increased volatility?',
+      title: `Based on today's macroeconomic news`,
+      label: `what sectors are likely to see increased volatility?`,
+      action: `Based on today's macroeconomic news, what sectors are likely to see increased volatility?`,
     },
     {
       title: 'Can you help me build a simple ',
@@ -35,8 +35,7 @@ function PureSuggestedActions({
       action: `What are the key differences between Sharpe ratio and Sortino ratio when evaluating risk?`,
     },
     {
-      title:
-        'Which technical indicators are most reliable',
+      title: 'Which technical indicators are most reliable',
       label: ' for identifying early trend reversals in stocks?',
       action:
         'Which technical indicators are most reliable for identifying early trend reversals in stocks?',
@@ -46,7 +45,7 @@ function PureSuggestedActions({
   return (
     <div
       data-testid="suggested-actions"
-      className="grid sm:grid-cols-2 gap-2 w-full"
+      className="hidden lg:grid lg:grid-cols-2 gap-2 w-full"
     >
       {suggestedActions.map((suggestedAction, index) => (
         <motion.div
@@ -55,7 +54,6 @@ function PureSuggestedActions({
           exit={{ opacity: 0, y: 20 }}
           transition={{ delay: 0.05 * index }}
           key={`suggested-action-${suggestedAction.title}-${index}`}
-          className={index > 1 ? 'hidden sm:block' : 'block'}
         >
           <Button
             variant="ghost"
@@ -69,7 +67,10 @@ function PureSuggestedActions({
             }}
             className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >
-            <span className="font-medium">{suggestedAction.title}</span>
+            <div className="flex items-center gap-2">
+              <PlusIcon size={16} />
+              <span className="font-medium">{suggestedAction.title}</span>
+            </div>
             <span className="text-muted-foreground">
               {suggestedAction.label}
             </span>
