@@ -509,3 +509,12 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw error;
   }
 }
+
+export async function getAllUsers(): Promise<Array<User>> {
+  try {
+    return await db.select().from(user);
+  } catch (error) {
+    console.error('Failed to get all users from database');
+    throw error;
+  }
+}

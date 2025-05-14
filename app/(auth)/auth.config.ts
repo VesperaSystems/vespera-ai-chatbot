@@ -1,12 +1,54 @@
-import type { NextAuthConfig } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
 import { compare } from 'bcrypt-ts';
+import NextAuth, { type DefaultSession } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { DUMMY_PASSWORD } from '@/lib/constants';
+
+export type UserType = 'regular';
+
+type ExtendedUser = {
+  id: string;
+  email: string;
+  type: UserType;
+  isAdmin: boolean;
+};
+
+declare module 'next-auth' {
+  interface Session {
+    user: ExtendedUser & DefaultSession['user'];
+  }
+
+  interface User extends ExtendedUser {}
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT extends ExtendedUser {}
+}
 
 export const authConfig = {
   pages: {
     signIn: '/login',
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isAdmin = auth?.user?.isAdmin;
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      const isOnAdmin = nextUrl.pathname.startsWith('/admin');
+
+      if (isOnAdmin) {
+        if (isLoggedIn && isAdmin) return true;
+        return false;
+      }
+
+      if (isOnDashboard) {
+        if (isLoggedIn) return true;
+        return false;
+      } else if (isLoggedIn) {
+        return Response.redirect(new URL('/', nextUrl));
+      }
+      return true;
+    },
   },
   providers: [
     Credentials({
@@ -35,38 +77,10 @@ export const authConfig = {
         return {
           id: user.id,
           email: user.email,
-          type: 'regular',
+          type: 'regular' as const,
+          isAdmin: user.isAdmin,
         };
       },
     }),
   ],
-  callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isApiRoute = nextUrl.pathname.startsWith('/api');
-      const isAuthRoute =
-        nextUrl.pathname.startsWith('/login') ||
-        nextUrl.pathname.startsWith('/register');
-
-      if (isApiRoute) {
-        return true;
-      }
-
-      if (isAuthRoute) {
-        if (isLoggedIn) {
-          return Response.redirect(new URL('/', nextUrl));
-        }
-        return true;
-      }
-
-      if (!isLoggedIn) {
-        return Response.redirect(new URL('/login', nextUrl));
-      }
-
-      return true;
-    },
-  },
-  session: {
-    strategy: 'jwt',
-  },
-} satisfies NextAuthConfig;
+} satisfies Parameters<typeof NextAuth>[0];
