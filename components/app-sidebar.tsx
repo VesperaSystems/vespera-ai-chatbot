@@ -2,6 +2,7 @@
 
 import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -16,11 +17,19 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
@@ -31,6 +40,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               href="/"
               onClick={() => {
                 setOpenMobile(false);
+                router.refresh();
               }}
               className="flex flex-row gap-3 items-center"
             >
@@ -38,23 +48,6 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 Vespera AI
               </span>
             </Link>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="p-2 h-fit"
-                  onClick={() => {
-                    setOpenMobile(false);
-                    router.push('/');
-                    router.refresh();
-                  }}
-                >
-                  <PlusIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent align="end">New Chat</TooltipContent>
-            </Tooltip>
           </div>
         </SidebarMenu>
       </SidebarHeader>

@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  maximumScale: 1, // Disable auto-zoom on mobile Safari
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 const geist = Geist({
@@ -70,7 +73,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className="min-h-screen antialiased bg-background">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -78,7 +81,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Toaster position="top-center" />
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <main className="flex min-h-screen flex-col">{children}</main>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

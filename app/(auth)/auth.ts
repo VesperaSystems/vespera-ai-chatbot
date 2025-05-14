@@ -11,6 +11,7 @@ type ExtendedUser = {
   id: string;
   email: string;
   type: UserType;
+  isAdmin: boolean;
 };
 
 declare module 'next-auth' {
@@ -60,6 +61,7 @@ export const {
           id: user.id,
           email: user.email,
           type: 'regular',
+          isAdmin: user.isAdmin,
         };
       },
     }),
@@ -70,6 +72,7 @@ export const {
       if (user?.id) {
         token.id = user.id;
         token.type = user.type;
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
@@ -77,6 +80,7 @@ export const {
       if (session.user && token.id) {
         session.user.id = token.id;
         session.user.type = token.type;
+        session.user.isAdmin = token.isAdmin;
       }
       return session;
     },
