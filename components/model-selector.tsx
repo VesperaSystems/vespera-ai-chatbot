@@ -14,7 +14,7 @@ import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 
 import { CheckCircleFillIcon, ChevronDownIcon, LockIcon } from './icons';
-import { ENTITLEMENTS } from '@/lib/ai/entitlements';
+import { ENTITLEMENTS, SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
 import {
   Tooltip,
@@ -37,8 +37,18 @@ export function ModelSelector({
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
 
-  const userType = session.user.type;
-  const { availableChatModelIds } = ENTITLEMENTS[userType];
+  // Ensure we have a valid subscription type, defaulting to REGULAR if invalid
+  const subscriptionType = useMemo(() => {
+    const type = session.user.subscriptionType;
+    // Check if the type is a valid subscription type
+    if (type in ENTITLEMENTS) {
+      return type;
+    }
+    console.warn(`Invalid subscription type: ${type}, defaulting to REGULAR`);
+    return SUBSCRIPTION_TYPES.REGULAR;
+  }, [session.user.subscriptionType]);
+
+  const { availableChatModelIds } = ENTITLEMENTS[subscriptionType];
 
   // Filter available models based on user's subscription type
   const availableChatModels = useMemo(() => {
@@ -74,6 +84,23 @@ export function ModelSelector({
     });
   };
 
+  const getUpgradeMessage = (modelId: string) => {
+    if (subscriptionType === SUBSCRIPTION_TYPES.REGULAR) {
+      if (modelId === 'gpt-4')
+        return 'Upgrade to Enterprise plan to access GPT-4';
+      if (modelId === 'gpt-3.5' || modelId === 'chat-model-reasoning') {
+        return 'Upgrade to Premium plan to access advanced models';
+      }
+    }
+    if (
+      subscriptionType === SUBSCRIPTION_TYPES.PREMIUM &&
+      modelId === 'gpt-4'
+    ) {
+      return 'Upgrade to Enterprise plan to access GPT-4';
+    }
+    return '';
+  };
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
@@ -96,6 +123,7 @@ export function ModelSelector({
         {chatModels.map((chatModel) => {
           const { id } = chatModel;
           const isAvailable = availableChatModelIds.includes(id);
+          const upgradeMessage = getUpgradeMessage(id);
 
           const menuItem = (
             <DropdownMenuItem
@@ -118,18 +146,7 @@ export function ModelSelector({
                         <TooltipTrigger>
                           <LockIcon size={12} />
                         </TooltipTrigger>
-                        <TooltipContent>
-                          {userType === 'regular' &&
-                            id === 'gpt-4' &&
-                            'Available in Enterprise plan'}
-                          {userType === 'regular' &&
-                            (id === 'gpt-3.5' ||
-                              id === 'chat-model-reasoning') &&
-                            'Available in Premium plan'}
-                          {userType === 'premium' &&
-                            id === 'gpt-4' &&
-                            'Available in Enterprise plan'}
-                        </TooltipContent>
+                        <TooltipContent>{upgradeMessage}</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   )}
@@ -150,17 +167,7 @@ export function ModelSelector({
               <TooltipProvider key={id}>
                 <Tooltip>
                   <TooltipTrigger asChild>{menuItem}</TooltipTrigger>
-                  <TooltipContent>
-                    {userType === 'regular' &&
-                      id === 'gpt-4' &&
-                      'Upgrade to Enterprise plan to access GPT-4'}
-                    {userType === 'regular' &&
-                      (id === 'gpt-3.5' || id === 'chat-model-reasoning') &&
-                      'Upgrade to Premium plan to access advanced models'}
-                    {userType === 'premium' &&
-                      id === 'gpt-4' &&
-                      'Upgrade to Enterprise plan to access GPT-4'}
-                  </TooltipContent>
+                  <TooltipContent>{upgradeMessage}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             );

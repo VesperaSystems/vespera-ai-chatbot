@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -16,6 +17,7 @@ export const user = pgTable('User', {
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
   isAdmin: boolean('isAdmin').notNull().default(false),
+  subscriptionType: integer('subscriptionType').notNull().default(1), // 1 = regular, 2 = premium, 3 = enterprise
 });
 
 export type User = InferSelectModel<typeof user>;

@@ -5,16 +5,26 @@ export interface Entitlements {
   availableChatModelIds: Array<string>;
 }
 
-export const ENTITLEMENTS: Record<UserType, Entitlements> = {
-  regular: {
+// Subscription type IDs
+export const SUBSCRIPTION_TYPES = {
+  REGULAR: 1,
+  PREMIUM: 2,
+  ENTERPRISE: 3,
+} as const;
+
+export type SubscriptionType =
+  (typeof SUBSCRIPTION_TYPES)[keyof typeof SUBSCRIPTION_TYPES];
+
+export const ENTITLEMENTS: Record<SubscriptionType, Entitlements> = {
+  [SUBSCRIPTION_TYPES.REGULAR]: {
     maxMessagesPerDay: 200,
     availableChatModelIds: ['chat-model'],
   },
-  premium: {
+  [SUBSCRIPTION_TYPES.PREMIUM]: {
     maxMessagesPerDay: 1000,
     availableChatModelIds: ['chat-model', 'gpt-3.5', 'chat-model-reasoning'],
   },
-  enterprise: {
+  [SUBSCRIPTION_TYPES.ENTERPRISE]: {
     maxMessagesPerDay: -1, // unlimited
     availableChatModelIds: [
       'chat-model',

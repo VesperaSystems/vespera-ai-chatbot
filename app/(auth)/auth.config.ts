@@ -3,13 +3,15 @@ import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { DUMMY_PASSWORD } from '@/lib/constants';
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
-export type UserType = 'regular' | 'premium' | 'enterprise';
+export type SubscriptionType =
+  (typeof SUBSCRIPTION_TYPES)[keyof typeof SUBSCRIPTION_TYPES];
 
 type ExtendedUser = {
   id: string;
   email: string;
-  type: UserType;
+  subscriptionType: SubscriptionType;
   isAdmin: boolean;
 };
 
@@ -74,10 +76,18 @@ export const authConfig = {
         const passwordsMatch = await compare(password, user.password);
         if (!passwordsMatch) return null;
 
+        // Ensure we have a valid subscription type
+        const subscriptionType = Number(user.subscriptionType);
+        const validSubscriptionType = Object.values(
+          SUBSCRIPTION_TYPES,
+        ).includes(subscriptionType)
+          ? subscriptionType
+          : SUBSCRIPTION_TYPES.REGULAR;
+
         return {
           id: user.id,
           email: user.email,
-          type: 'regular' as const,
+          subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
         };
       },

@@ -4,11 +4,20 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface User {
   id: string;
   email: string;
   isAdmin: boolean;
+  subscriptionType: number;
 }
 
 export function UserManagement({ users: initialUsers }: { users: User[] }) {
@@ -38,6 +47,49 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
     }
   };
 
+  const updateUserSubscriptionType = async (
+    userId: string,
+    subscriptionType: number,
+  ) => {
+    try {
+      console.log('Updating subscription type:', { userId, subscriptionType });
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, subscriptionType }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user subscription type');
+      }
+
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, subscriptionType } : user,
+        ),
+      );
+      toast.success('User subscription type updated successfully');
+    } catch (error) {
+      console.error('Error updating user subscription type:', error);
+      toast.error('Failed to update user subscription type');
+    }
+  };
+
+  const getSubscriptionTypeName = (type: number) => {
+    switch (type) {
+      case SUBSCRIPTION_TYPES.REGULAR:
+        return 'Regular';
+      case SUBSCRIPTION_TYPES.PREMIUM:
+        return 'Premium';
+      case SUBSCRIPTION_TYPES.ENTERPRISE:
+        return 'Enterprise';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -55,10 +107,36 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{user.email}</p>
               <p className="text-sm text-muted-foreground">
-                {user.isAdmin ? 'Admin' : 'Regular User'}
+                {user.isAdmin ? 'Admin' : 'Regular User'} •{' '}
+                {getSubscriptionTypeName(user.subscriptionType)}
               </p>
             </div>
             <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Select
+                  value={user.subscriptionType.toString()}
+                  onValueChange={(value) =>
+                    updateUserSubscriptionType(user.id, Number(value))
+                  }
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SUBSCRIPTION_TYPES.REGULAR.toString()}>
+                      Regular
+                    </SelectItem>
+                    <SelectItem value={SUBSCRIPTION_TYPES.PREMIUM.toString()}>
+                      Premium
+                    </SelectItem>
+                    <SelectItem
+                      value={SUBSCRIPTION_TYPES.ENTERPRISE.toString()}
+                    >
+                      Enterprise
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={user.isAdmin}

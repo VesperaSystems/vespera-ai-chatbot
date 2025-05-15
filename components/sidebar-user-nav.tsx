@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from './toast';
 import { LoaderIcon } from './icons';
 import { guestRegex } from '@/lib/constants';
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
 export function SidebarUserNav({ user }: { user: User }) {
   const router = useRouter();
@@ -29,6 +30,19 @@ export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, theme } = useTheme();
 
   const isGuest = guestRegex.test(data?.user?.email ?? '');
+
+  const getSubscriptionTypeName = (type: number) => {
+    switch (type) {
+      case SUBSCRIPTION_TYPES.REGULAR:
+        return 'Regular';
+      case SUBSCRIPTION_TYPES.PREMIUM:
+        return 'Premium';
+      case SUBSCRIPTION_TYPES.ENTERPRISE:
+        return 'Enterprise';
+      default:
+        return 'Unknown';
+    }
+  };
 
   return (
     <SidebarMenu>

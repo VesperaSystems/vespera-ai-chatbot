@@ -4,13 +4,14 @@ import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
 export type UserType = 'regular';
 
 type ExtendedUser = {
   id: string;
   email: string;
-  type: UserType;
+  subscriptionType: number;
   isAdmin: boolean;
 };
 
@@ -57,10 +58,18 @@ export const {
         const passwordsMatch = await compare(password, user.password);
         if (!passwordsMatch) return null;
 
+        // Ensure we have a valid subscription type
+        const subscriptionType = Number(user.subscriptionType);
+        const validSubscriptionType = Object.values(
+          SUBSCRIPTION_TYPES,
+        ).includes(subscriptionType)
+          ? subscriptionType
+          : SUBSCRIPTION_TYPES.REGULAR;
+
         return {
           id: user.id,
           email: user.email,
-          type: 'regular',
+          subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
         };
       },
@@ -69,17 +78,19 @@ export const {
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      if (user?.id) {
+      if (user) {
         token.id = user.id;
-        token.type = user.type;
+        token.email = user.email;
+        token.subscriptionType = user.subscriptionType;
         token.isAdmin = user.isAdmin;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
+      if (token) {
         session.user.id = token.id;
-        session.user.type = token.type;
+        session.user.email = token.email;
+        session.user.subscriptionType = token.subscriptionType;
         session.user.isAdmin = token.isAdmin;
       }
       return session;
