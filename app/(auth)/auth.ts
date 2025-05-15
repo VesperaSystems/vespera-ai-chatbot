@@ -81,7 +81,7 @@ export const {
       if (user) {
         token.id = user.id;
         token.email = user.email;
-        token.subscriptionType = user.subscriptionType;
+        token.subscriptionType = Number(user.subscriptionType);
         token.isAdmin = user.isAdmin;
       }
       return token;
@@ -90,7 +90,7 @@ export const {
       if (token) {
         session.user.id = token.id;
         session.user.email = token.email;
-        session.user.subscriptionType = token.subscriptionType;
+        session.user.subscriptionType = Number(token.subscriptionType);
         session.user.isAdmin = token.isAdmin;
       }
       return session;

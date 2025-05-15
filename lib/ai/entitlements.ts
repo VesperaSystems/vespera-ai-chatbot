@@ -22,7 +22,7 @@ export const ENTITLEMENTS: Record<SubscriptionType, Entitlements> = {
   },
   [SUBSCRIPTION_TYPES.PREMIUM]: {
     maxMessagesPerDay: 1000,
-    availableChatModelIds: ['chat-model', 'gpt-3.5', 'chat-model-reasoning'],
+    availableChatModelIds: ['chat-model', 'gpt-3.5', 'gpt-4'],
   },
   [SUBSCRIPTION_TYPES.ENTERPRISE]: {
     maxMessagesPerDay: -1, // unlimited

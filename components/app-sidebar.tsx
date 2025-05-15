@@ -37,7 +37,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const getSubscriptionTypeName = (type: number) => {
     console.log('Subscription type:', type);
 
-    switch (type) {
+    switch (Number(type)) {
       case SUBSCRIPTION_TYPES.REGULAR:
         return 'Regular';
       case SUBSCRIPTION_TYPES.PREMIUM:
@@ -56,24 +56,30 @@ export function AppSidebar({ user }: { user: User | undefined }) {
     <Sidebar className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex flex-row justify-between items-center">
-            <Link
-              href="/"
-              onClick={() => {
-                setOpenMobile(false);
-                router.refresh();
-              }}
-              className="flex flex-row gap-3 items-center"
-            >
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+          <div className="flex flex-row justify-between items-center px-2">
+            <div className="flex flex-row items-center gap-2.5">
+              <Link
+                href="/"
+                onClick={() => {
+                  setOpenMobile(false);
+                  router.refresh();
+                }}
+                className="text-lg font-semibold tracking-tight hover:bg-muted/50 rounded-md px-2.5 py-1.5 transition-colors"
+              >
                 Vespera AI
-              </span>
-              {session?.user && (
-                <span className="text-sm text-red-500 font-medium">
-                  {getSubscriptionTypeName(session.user.subscriptionType)}
-                </span>
+              </Link>
+              {session?.user && session.user.subscriptionType !== undefined && (
+                <Link
+                  href="/pricing"
+                  onClick={() => setOpenMobile(false)}
+                  className="text-sm font-medium text-red-500 px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                >
+                  {getSubscriptionTypeName(
+                    Number(session.user.subscriptionType),
+                  )}
+                </Link>
               )}
-            </Link>
+            </div>
           </div>
         </SidebarMenu>
       </SidebarHeader>
