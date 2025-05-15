@@ -17,6 +17,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 const geist = Geist({
@@ -73,7 +74,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen antialiased bg-background">
+      <body className="min-h-[100dvh] antialiased bg-background">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
