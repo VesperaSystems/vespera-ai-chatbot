@@ -81,14 +81,14 @@ export async function POST(request: Request) {
       return new Response('Error: User not authenticated', { status: 401 });
     }
 
-    const userType: UserType = session.user.type;
+    const subscriptionType = session.user.subscriptionType;
 
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
     });
 
-    if (messageCount > ENTITLEMENTS[userType].maxMessagesPerDay) {
+    if (messageCount > ENTITLEMENTS[subscriptionType].maxMessagesPerDay) {
       return new Response(
         JSON.stringify({
           error:
@@ -106,7 +106,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const chat = await getChatById({ id });
+    const chat = await getChatById({ id }).catch((error) => {
+      console.error('Error fetching chat:', error);
+      return new Response(
+        JSON.stringify({
+          error: 'Unable to load chat',
+          message:
+            'We encountered an issue loading your chat. Redirecting to a new chat...',
+          redirect: '/chat/new',
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    });
+
+    if (chat instanceof Response) {
+      return chat;
+    }
 
     if (!chat) {
       const title = await generateTitleFromUserMessage({
