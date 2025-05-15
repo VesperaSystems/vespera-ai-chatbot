@@ -16,6 +16,7 @@ import {
   getStreamIdsByChatId,
   saveChat,
   saveMessages,
+  updateChatModel,
 } from '@/lib/db/queries';
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -117,12 +118,16 @@ export async function POST(request: Request) {
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
+        model: selectedChatModel,
       });
     } else {
       if (chat.userId !== session.user.id) {
         return new Response('Error: Access denied to this chat', {
           status: 403,
         });
+      }
+      if (chat.model !== selectedChatModel) {
+        await updateChatModel({ id, model: selectedChatModel });
       }
     }
 

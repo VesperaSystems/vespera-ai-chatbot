@@ -20,16 +20,15 @@ export const user = pgTable('User', {
 
 export type User = InferSelectModel<typeof user>;
 
-export const chat = pgTable('Chat', {
+export const chat = pgTable('Chat_v2', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
-  title: text('title').notNull(),
   userId: uuid('userId')
     .notNull()
     .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
+  title: varchar('title').notNull(),
+  visibility: varchar('visibility').notNull(),
+  model: varchar('model').notNull().default('chat-model'),
+  createdAt: timestamp('createdAt').notNull(),
 });
 
 export type Chat = InferSelectModel<typeof chat>;

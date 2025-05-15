@@ -518,3 +518,13 @@ export async function getAllUsers(): Promise<Array<User>> {
     throw error;
   }
 }
+
+export async function updateChatModel({
+  id,
+  model,
+}: {
+  id: string;
+  model: string;
+}) {
+  return await db.update(chat).set({ model }).where(eq(chat.id, id));
+}

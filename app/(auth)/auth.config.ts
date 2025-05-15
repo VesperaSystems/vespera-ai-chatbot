@@ -4,7 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 
-export type UserType = 'regular';
+export type UserType = 'regular' | 'premium' | 'enterprise';
 
 type ExtendedUser = {
   id: string;
