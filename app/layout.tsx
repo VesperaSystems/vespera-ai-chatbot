@@ -2,6 +2,7 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { FeedbackButton } from '@/components/feedback-button';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
@@ -84,6 +85,9 @@ export default async function RootLayout({
           <Toaster position="top-center" />
           <SessionProvider>
             <main className="flex min-h-screen flex-col">{children}</main>
+            <div className="fixed bottom-4 right-4 z-50">
+              <FeedbackButton />
+            </div>
           </SessionProvider>
         </ThemeProvider>
       </body>
