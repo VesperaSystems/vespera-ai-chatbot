@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Edit, Trash2, Plus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import Badge from '../ui/badge';
 
 interface SubscriptionType {
   id: number;
