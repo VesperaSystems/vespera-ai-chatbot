@@ -9,15 +9,15 @@ const components: Partial<Components> = {
   code: CodeBlock,
   pre: ({ children }) => {
     // If children is a code element, render it directly
-    if (React.isValidElement(children) && children.type === 'code') {
+    if (isValidElement(children) && children.type === 'code') {
       return children;
     }
     return <>{children}</>;
   },
   p: ({ children, ...props }) => {
     // Check if children contains a code block
-    const hasCodeBlock = React.Children.toArray(children).some(
-      (child) => React.isValidElement(child) && child.type === CodeBlock,
+    const hasCodeBlock = Children.toArray(children).some(
+      (child) => isValidElement(child) && child.type === CodeBlock,
     );
 
     // If it contains a code block, don't wrap in p tag

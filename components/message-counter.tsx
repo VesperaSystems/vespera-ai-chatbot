@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getUserMessageCount } from '@/lib/db/queries';
 import { getEntitlements } from '@/lib/ai/entitlements';
 import { useSession } from 'next-auth/react';
@@ -11,7 +11,7 @@ export function MessageCounter() {
   const [limit, setLimit] = useState<number>(0);
   const [lastMessageCount, setLastMessageCount] = useState<number>(0);
 
-  const fetchCount = async () => {
+  const fetchCount = useCallback(async () => {
     if (session?.user?.id) {
       const messageCount = await getUserMessageCount(session.user.id);
       setCount(messageCount);
@@ -36,7 +36,7 @@ export function MessageCounter() {
         setLimit(0);
       }
     }
-  };
+  }, [session?.user?.id, session?.user?.subscriptionType]);
 
   useEffect(() => {
     void fetchCount();
