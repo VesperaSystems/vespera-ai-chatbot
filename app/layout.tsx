@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { FeedbackButton } from '@/components/feedback-button';
+import { cn } from '@/lib/utils';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
@@ -75,7 +76,13 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-[100dvh] antialiased bg-background">
+      <body
+        className={cn(
+          'min-h-dvh bg-background font-sans antialiased',
+          geist.variable,
+          geistMono.variable,
+        )}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

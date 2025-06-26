@@ -81,7 +81,7 @@ export function MessageCounter() {
         session?.user?.id,
       );
     };
-  }, [session?.user?.id, session?.user?.subscriptionType]);
+  }, [session?.user?.id, session?.user?.subscriptionType, fetchCount]);
 
   if (!session?.user?.id || limit === -1) return null;
 

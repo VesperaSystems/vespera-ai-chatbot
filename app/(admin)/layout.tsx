@@ -29,26 +29,22 @@ export default async function AdminLayout({
                 <Home size={20} />
                 <span className="font-semibold">Vespera AI</span>
               </Link>
-              <nav className="flex items-center space-x-4">
-                <Link href="/admin/users">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2"
+              <div className="p-4">
+                <nav className="flex space-x-4">
+                  <Link
+                    href="/admin/users"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
                   >
-                    <Users size={16} />
-                    <span>Users</span>
-                  </Button>
-                </Link>
-                <Link href="/admin/subscriptiontypes">
-                  <Button
-                    variant="ghost"
-                    className="flex items-center space-x-2"
+                    Users
+                  </Link>
+                  <Link
+                    href="/admin/subscriptiontypes"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
                   >
-                    <CreditCard size={16} />
-                    <span>Subscription Types</span>
-                  </Button>
-                </Link>
-              </nav>
+                    Subscription Types
+                  </Link>
+                </nav>
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">Admin Dashboard</div>
           </div>

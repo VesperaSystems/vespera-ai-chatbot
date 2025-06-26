@@ -3,14 +3,13 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import { PlusIcon, InfoIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
-import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import { MessageCounter } from './message-counter';
