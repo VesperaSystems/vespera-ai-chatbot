@@ -8,9 +8,10 @@ const updateModelSchema = z.object({
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
+  const { id } = await params;
 
   if (!session?.user) {
     return new Response('Error: User not authenticated', { status: 401 });
@@ -20,7 +21,7 @@ export async function PATCH(
     const json = await request.json();
     const { model } = updateModelSchema.parse(json);
 
-    const chat = await getChatById({ id: params.id });
+    const chat = await getChatById({ id });
 
     if (!chat) {
       return new Response('Error: Chat not found', { status: 404 });
@@ -30,7 +31,7 @@ export async function PATCH(
       return new Response('Error: Access denied to this chat', { status: 403 });
     }
 
-    await updateChatModel({ id: params.id, model });
+    await updateChatModel({ id, model });
 
     return new Response('Model updated successfully', { status: 200 });
   } catch (error) {

@@ -6,15 +6,17 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
+  const { id: idParam } = await params;
+
   if (!session?.user?.isAdmin) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   try {
-    const id = Number.parseInt(params.id);
+    const id = Number.parseInt(idParam);
     if (Number.isNaN(id)) {
       return new NextResponse('Invalid ID', { status: 400 });
     }
@@ -59,15 +61,17 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
+  const { id: idParam } = await params;
+
   if (!session?.user?.isAdmin) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   try {
-    const id = Number.parseInt(params.id);
+    const id = Number.parseInt(idParam);
     if (Number.isNaN(id)) {
       return new NextResponse('Invalid ID', { status: 400 });
     }
