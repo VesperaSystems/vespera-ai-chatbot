@@ -1,4 +1,4 @@
-import 'server-only';
+'use server';
 
 import {
   and,
@@ -27,11 +27,14 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  userMessageCounts,
+  subscriptionTypes,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { getEntitlements } from '@/lib/ai/entitlements';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -81,11 +84,13 @@ export async function saveChat({
   userId,
   title,
   visibility,
+  model,
 }: {
   id: string;
   userId: string;
   title: string;
   visibility: VisibilityType;
+  model: string;
 }) {
   try {
     return await db.insert(chat).values({
@@ -94,6 +99,7 @@ export async function saveChat({
       userId,
       title,
       visibility,
+      model,
     });
   } catch (error) {
     console.error('Failed to save chat in database');
@@ -527,4 +533,142 @@ export async function updateChatModel({
   model: string;
 }) {
   return await db.update(chat).set({ model }).where(eq(chat.id, id));
+}
+
+export async function incrementUserMessageCount(userId: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  console.log(
+    'Incrementing message count for user:',
+    userId,
+    'on date:',
+    today,
+  );
+
+  try {
+    const [existingCount] = await db
+      .select()
+      .from(userMessageCounts)
+      .where(
+        and(
+          eq(userMessageCounts.userId, userId),
+          eq(userMessageCounts.date, today),
+        ),
+      );
+
+    if (existingCount) {
+      console.log(
+        'Updating existing count from',
+        existingCount.count,
+        'to',
+        existingCount.count + 1,
+      );
+      const [updated] = await db
+        .update(userMessageCounts)
+        .set({
+          count: existingCount.count + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(userMessageCounts.id, existingCount.id))
+        .returning();
+      return updated;
+    } else {
+      console.log('Creating new count entry with count: 1');
+      const [newCount] = await db
+        .insert(userMessageCounts)
+        .values({
+          userId,
+          date: today,
+          count: 1,
+        })
+        .returning();
+      return newCount;
+    }
+  } catch (error) {
+    console.error('Failed to increment user message count:', error);
+    throw error;
+  }
+}
+
+export async function getUserMessageCount(
+  userId: string,
+  date: Date = new Date(),
+) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  try {
+    const [count] = await db
+      .select()
+      .from(userMessageCounts)
+      .where(
+        and(
+          eq(userMessageCounts.userId, userId),
+          eq(userMessageCounts.date, startOfDay),
+        ),
+      );
+    return count?.count ?? 0;
+  } catch (error) {
+    console.error('Failed to get user message count:', error);
+    throw error;
+  }
+}
+
+export async function checkUserMessageLimit(
+  userId: string,
+): Promise<{ canSend: boolean; remaining: number }> {
+  try {
+    // Get user's subscription type
+    const [userData] = await db.select().from(user).where(eq(user.id, userId));
+
+    if (!userData) {
+      throw new Error('User not found');
+    }
+
+    const entitlementsMap = await getEntitlements();
+    const entitlements = entitlementsMap[userData.subscriptionType];
+
+    if (!entitlements) {
+      throw new Error(
+        `No entitlements found for subscription type ${userData.subscriptionType}`,
+      );
+    }
+
+    if (entitlements.maxMessagesPerDay === -1) {
+      return { canSend: true, remaining: Number.POSITIVE_INFINITY };
+    }
+
+    // Get today's message count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [count] = await db
+      .select()
+      .from(userMessageCounts)
+      .where(
+        and(
+          eq(userMessageCounts.userId, userId),
+          eq(userMessageCounts.date, today),
+        ),
+      );
+
+    const currentCount = count?.count ?? 0;
+    const remaining = entitlements.maxMessagesPerDay - currentCount;
+
+    return {
+      canSend: currentCount < entitlements.maxMessagesPerDay,
+      remaining,
+    };
+  } catch (error) {
+    console.error('Failed to check user message limit:', error);
+    throw error;
+  }
+}
+
+export async function getAllSubscriptionTypes() {
+  return db
+    .select()
+    .from(subscriptionTypes)
+    .where(eq(subscriptionTypes.isActive, true));
 }

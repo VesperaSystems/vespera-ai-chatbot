@@ -1,6 +1,12 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import {
+  startTransition,
+  useMemo,
+  useOptimistic,
+  useState,
+  useEffect,
+} from 'react';
 
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -14,7 +20,7 @@ import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 
 import { CheckCircleFillIcon, ChevronDownIcon, LockIcon } from './icons';
-import { ENTITLEMENTS, SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
+import { getEntitlements, SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
 import {
   Tooltip,
@@ -36,19 +42,59 @@ export function ModelSelector({
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
+  const [entitlements, setEntitlements] = useState<Record<number, any>>({});
+  const [isLoadingEntitlements, setIsLoadingEntitlements] = useState(true);
+
+  useEffect(() => {
+    const fetchEntitlements = async () => {
+      try {
+        setIsLoadingEntitlements(true);
+        const entitlementsMap = await getEntitlements();
+        setEntitlements(entitlementsMap);
+      } catch (error) {
+        console.error('Failed to fetch entitlements:', error);
+      } finally {
+        setIsLoadingEntitlements(false);
+      }
+    };
+    fetchEntitlements();
+  }, []);
 
   // Ensure we have a valid subscription type, defaulting to REGULAR if invalid
   const subscriptionType = useMemo(() => {
     const type = session.user.subscriptionType;
-    // Check if the type is a valid subscription type
-    if (type in ENTITLEMENTS) {
+
+    // Don't validate until entitlements are loaded
+    if (isLoadingEntitlements) {
+      return type; // Return the original type while loading
+    }
+
+    // Check if the type exists in entitlements
+    if (entitlements[type]) {
       return type;
     }
-    console.warn(`Invalid subscription type: ${type}, defaulting to REGULAR`);
-    return SUBSCRIPTION_TYPES.REGULAR;
-  }, [session.user.subscriptionType]);
 
-  const { availableChatModelIds } = ENTITLEMENTS[subscriptionType];
+    // Only warn if entitlements are loaded and the type is not found
+    // But be more lenient - accept any positive integer as potentially valid
+    if (
+      !isLoadingEntitlements &&
+      Object.keys(entitlements).length > 0 &&
+      type <= 0
+    ) {
+      console.warn(`Invalid subscription type: ${type}, defaulting to REGULAR`);
+      return SUBSCRIPTION_TYPES.REGULAR;
+    }
+
+    // If entitlements are loaded but type not found, it might be a new subscription type
+    // Return the original type and let the system handle it gracefully
+    return type;
+  }, [session.user.subscriptionType, entitlements, isLoadingEntitlements]);
+
+  const availableChatModelIds = useMemo(() => {
+    return (
+      entitlements[subscriptionType]?.availableChatModelIds ?? ['chat-model']
+    );
+  }, [entitlements, subscriptionType]);
 
   // Filter available models based on user's subscription type
   const availableChatModels = useMemo(() => {

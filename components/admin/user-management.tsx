@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 import {
   Select,
   SelectContent,
@@ -20,8 +18,28 @@ interface User {
   subscriptionType: number;
 }
 
+interface SubscriptionType {
+  id: number;
+  name: string;
+}
+
+async function fetchSubscriptionTypes(): Promise<SubscriptionType[]> {
+  const res = await fetch('/api/admin/subscription-types');
+  if (!res.ok) throw new Error('Failed to fetch subscription types');
+  return res.json();
+}
+
 export function UserManagement({ users: initialUsers }: { users: User[] }) {
   const [users, setUsers] = useState(initialUsers);
+  const [subscriptionTypes, setSubscriptionTypes] = useState<
+    SubscriptionType[]
+  >([]);
+
+  useEffect(() => {
+    fetchSubscriptionTypes()
+      .then(setSubscriptionTypes)
+      .catch(() => toast.error('Failed to load subscription types'));
+  }, []);
 
   const updateUserAdminStatus = async (userId: string, isAdmin: boolean) => {
     try {
@@ -52,7 +70,6 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
     subscriptionType: number,
   ) => {
     try {
-      console.log('Updating subscription type:', { userId, subscriptionType });
       const response = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: {
@@ -78,16 +95,8 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
   };
 
   const getSubscriptionTypeName = (type: number) => {
-    switch (type) {
-      case SUBSCRIPTION_TYPES.REGULAR:
-        return 'Regular';
-      case SUBSCRIPTION_TYPES.PREMIUM:
-        return 'Premium';
-      case SUBSCRIPTION_TYPES.ENTERPRISE:
-        return 'Enterprise';
-      default:
-        return 'Unknown';
-    }
+    const found = subscriptionTypes.find((t) => t.id === type);
+    return found ? found.name : 'Unknown';
   };
 
   return (
@@ -123,17 +132,11 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={SUBSCRIPTION_TYPES.REGULAR.toString()}>
-                      Regular
-                    </SelectItem>
-                    <SelectItem value={SUBSCRIPTION_TYPES.PREMIUM.toString()}>
-                      Premium
-                    </SelectItem>
-                    <SelectItem
-                      value={SUBSCRIPTION_TYPES.ENTERPRISE.toString()}
-                    >
-                      Enterprise
-                    </SelectItem>
+                    {subscriptionTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

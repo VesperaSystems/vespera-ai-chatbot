@@ -5,7 +5,7 @@ import {
   smoothStream,
   streamText,
 } from 'ai';
-import { auth, type UserType } from '@/app/(auth)/auth';
+import { auth } from '@/app/(auth)/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
@@ -14,6 +14,7 @@ import {
   getMessageCountByUserId,
   getMessagesByChatId,
   getStreamIdsByChatId,
+  incrementUserMessageCount,
   saveChat,
   saveMessages,
   updateChatModel,
@@ -26,7 +27,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { ENTITLEMENTS } from '@/lib/ai/entitlements';
+import { getEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -88,7 +89,28 @@ export async function POST(request: Request) {
       differenceInHours: 24,
     });
 
-    if (messageCount > ENTITLEMENTS[subscriptionType].maxMessagesPerDay) {
+    const entitlementsMap = await getEntitlements();
+    const entitlements = entitlementsMap[subscriptionType];
+
+    if (!entitlements) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid subscription type',
+          message: 'Please contact support to resolve this issue.',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    }
+
+    if (
+      entitlements.maxMessagesPerDay !== -1 &&
+      messageCount > entitlements.maxMessagesPerDay
+    ) {
       return new Response(
         JSON.stringify({
           error:
@@ -180,6 +202,11 @@ export async function POST(request: Request) {
         },
       ],
     });
+
+    // Increment the user's message count
+    if (session.user?.id) {
+      await incrementUserMessageCount(session.user.id);
+    }
 
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });

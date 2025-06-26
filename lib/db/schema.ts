@@ -10,6 +10,7 @@ import {
   foreignKey,
   boolean,
   integer,
+  serial,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -170,3 +171,28 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const userMessageCounts = pgTable('user_message_counts', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id),
+  date: timestamp('date').notNull().defaultNow(),
+  count: integer('count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const subscriptionTypes = pgTable('subscription_types', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 64 }).notNull(),
+  price: integer('price').notNull(), // Price in cents
+  maxMessagesPerDay: integer('max_messages_per_day').notNull(),
+  availableModels: json('available_models').notNull(), // Array of model IDs
+  description: text('description'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export type SubscriptionType = InferSelectModel<typeof subscriptionTypes>;

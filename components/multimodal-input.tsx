@@ -15,6 +15,9 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
+import { checkUserMessageLimit } from '@/lib/db/queries';
+import { cn } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
@@ -57,6 +60,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
 }) {
+  const { data: session } = useSession();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
 
@@ -109,6 +113,44 @@ function PureMultimodalInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
+  const handleSubmitWithLimit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!session?.user?.id) {
+      console.error('No user ID available');
+      return;
+    }
+
+    try {
+      const { canSend, remaining } = await checkUserMessageLimit(
+        session.user.id,
+      );
+
+      if (!canSend) {
+        toast.error(
+          `Daily message limit reached. You have ${remaining} messages remaining.`,
+        );
+        return;
+      }
+
+      // Emit event to update message counter immediately
+      console.log(
+        'MultimodalInput: Dispatching message-sent event for user:',
+        session.user.id,
+      );
+      window.dispatchEvent(
+        new CustomEvent('message-sent', {
+          detail: { userId: session.user.id },
+        }),
+      );
+
+      handleSubmit(e);
+    } catch (error) {
+      console.error('Failed to check message limit:', error);
+      handleSubmit(e);
+    }
+  };
+
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
@@ -149,7 +191,7 @@ function PureMultimodalInput({
         return {
           url,
           name: pathname,
-          contentType: contentType,
+          contentType,
         };
       }
       const { error } = await response.json();
@@ -262,52 +304,78 @@ function PureMultimodalInput({
         </div>
       )}
 
-      <Textarea
-        data-testid="multimodal-input"
-        ref={textareaRef}
-        placeholder="Send a message..."
-        value={input}
-        onChange={handleInput}
-        className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
+      <form
+        onSubmit={handleSubmitWithLimit}
+        className={cn(
+          'flex flex-row gap-2 relative items-end w-full',
           className,
         )}
-        rows={2}
-        autoFocus
-        onKeyDown={(event) => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.nativeEvent.isComposing
-          ) {
-            event.preventDefault();
+      >
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-row gap-2 w-full">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={handleInput}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Enter' &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
 
-            if (status !== 'ready') {
-              toast.error(
-                `Cannot send message: Model is currently ${status === 'streaming' ? 'generating a response' : 'processing'}. Please wait until it finishes.`,
-              );
-            } else {
-              submitForm();
-            }
-          }
-        }}
-      />
-
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
-        <AttachmentsButton fileInputRef={fileInputRef} status={status} />
-      </div>
-
-      <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">
-        {status === 'submitted' ? (
-          <StopButton stop={stop} setMessages={setMessages} />
-        ) : (
-          <SendButton
-            input={input}
-            submitForm={submitForm}
-            uploadQueue={uploadQueue}
-          />
-        )}
-      </div>
+                  if (status !== 'ready') {
+                    toast.error(
+                      `Cannot send message: Model is currently ${status === 'streaming' ? 'generating a response' : 'processing'}. Please wait until it finishes.`,
+                    );
+                  } else {
+                    submitForm();
+                  }
+                }
+              }}
+              placeholder="Message Vespera..."
+              className="min-h-[98px] max-h-[300px] resize-none"
+              disabled={status === 'streaming'}
+            />
+            <div className="flex flex-col gap-2">
+              <Button
+                type="submit"
+                size="icon"
+                className="size-10"
+                disabled={!input.trim() || status === 'streaming'}
+              >
+                <ArrowUpIcon />
+              </Button>
+              {status === 'streaming' && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  className="size-10"
+                  onClick={stop}
+                >
+                  <StopIcon />
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-row gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-10"
+              onClick={(event) => {
+                event.preventDefault();
+                fileInputRef.current?.click();
+              }}
+            >
+              <PaperclipIcon />
+            </Button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }

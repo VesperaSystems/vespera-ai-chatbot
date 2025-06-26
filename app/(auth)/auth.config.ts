@@ -78,11 +78,10 @@ export const authConfig = {
 
         // Ensure we have a valid subscription type
         const subscriptionType = Number(user.subscriptionType);
-        const validSubscriptionType = Object.values(
-          SUBSCRIPTION_TYPES,
-        ).includes(subscriptionType)
-          ? subscriptionType
-          : SUBSCRIPTION_TYPES.REGULAR;
+        // Accept any positive integer as valid subscription type
+        // The database will handle validation of actual subscription types
+        const validSubscriptionType =
+          subscriptionType > 0 ? subscriptionType : SUBSCRIPTION_TYPES.REGULAR;
 
         return {
           id: user.id,

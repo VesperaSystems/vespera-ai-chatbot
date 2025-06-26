@@ -13,6 +13,7 @@ import { useSidebar } from './ui/sidebar';
 import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
+import { MessageCounter } from './message-counter';
 import type { Session } from 'next-auth';
 
 function PureChatHeader({
@@ -77,6 +78,12 @@ function PureChatHeader({
           selectedVisibilityType={selectedVisibilityType}
           className="order-1 md:order-3"
         />
+      )}
+
+      {!isReadonly && (
+        <div className="order-1 md:order-4">
+          <MessageCounter />
+        </div>
       )}
 
       <Button

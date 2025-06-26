@@ -1,36 +1,40 @@
-import type { UserType } from '@/app/(auth)/auth.config';
+import type { User } from '@/lib/db/schema';
+import { getAllSubscriptionTypes } from '@/lib/db/queries';
 
-export interface Entitlements {
+export type SubscriptionType = User['subscriptionType'];
+
+export type Entitlements = {
   maxMessagesPerDay: number;
-  availableChatModelIds: Array<string>;
-}
+  availableChatModelIds: string[];
+  price: number;
+  name: string;
+  description?: string;
+};
 
-// Subscription type IDs
+// Subscription type IDs (legacy fallback)
 export const SUBSCRIPTION_TYPES = {
   REGULAR: 1,
   PREMIUM: 2,
   ENTERPRISE: 3,
 } as const;
 
-export type SubscriptionType =
-  (typeof SUBSCRIPTION_TYPES)[keyof typeof SUBSCRIPTION_TYPES];
-
-export const ENTITLEMENTS: Record<SubscriptionType, Entitlements> = {
-  [SUBSCRIPTION_TYPES.REGULAR]: {
-    maxMessagesPerDay: 200,
-    availableChatModelIds: ['chat-model'],
-  },
-  [SUBSCRIPTION_TYPES.PREMIUM]: {
-    maxMessagesPerDay: 1000,
-    availableChatModelIds: ['chat-model', 'gpt-3.5', 'gpt-4'],
-  },
-  [SUBSCRIPTION_TYPES.ENTERPRISE]: {
-    maxMessagesPerDay: -1, // unlimited
-    availableChatModelIds: [
-      'chat-model',
-      'gpt-3.5',
-      'gpt-4',
-      'chat-model-reasoning',
-    ],
-  },
-};
+// Fetch entitlements from the database
+export async function getEntitlements() {
+  const types = await getAllSubscriptionTypes();
+  const entitlements: Record<number, Entitlements> = {};
+  for (const type of types) {
+    entitlements[type.id] = {
+      maxMessagesPerDay: type.maxMessagesPerDay,
+      availableChatModelIds: Array.isArray(type.availableModels)
+        ? type.availableModels
+        : typeof type.availableModels === 'string'
+          ? JSON.parse(type.availableModels)
+          : [],
+      price: type.price,
+      name: type.name,
+      description:
+        typeof type.description === 'string' ? type.description : undefined,
+    };
+  }
+  return entitlements;
+}
