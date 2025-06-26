@@ -6,8 +6,6 @@ import {
   useEffect,
   useState,
   type ReactNode,
-  Children,
-  isValidElement,
 } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
