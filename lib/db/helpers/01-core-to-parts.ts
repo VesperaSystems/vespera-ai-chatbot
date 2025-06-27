@@ -5,7 +5,6 @@ import {
   message,
   type MessageDeprecated,
   messageDeprecated,
-  vote,
   voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
