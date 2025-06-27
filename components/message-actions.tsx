@@ -1,8 +1,10 @@
 import type { Message } from 'ai';
 import { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
+import { fetcher } from '@/lib/utils';
 
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons';
 import { Button } from './ui/button';
@@ -34,14 +36,21 @@ export function PureMessageActions({
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
 
+  // Get the current votes from SWR for real-time updates
+  const { data: currentVotes } = useSWR<Array<Vote>>(
+    `/api/vote?chatId=${chatId}`,
+    fetcher,
+    { fallbackData: allVotes },
+  );
+
   if (isLoading) return null;
   if (message.role === 'user') return null;
 
   // Calculate vote counts for this message
   const messageVotes =
-    allVotes?.filter((v) => v.messageId === message.id) || [];
-  const upvoteCount = messageVotes.filter((v) => v.isUpvoted).length;
-  const downvoteCount = messageVotes.filter((v) => !v.isUpvoted).length;
+    currentVotes?.filter((v: Vote) => v.messageId === message.id) || [];
+  const upvoteCount = messageVotes.filter((v: Vote) => v.isUpvoted).length;
+  const downvoteCount = messageVotes.filter((v: Vote) => !v.isUpvoted).length;
 
   return (
     <TooltipProvider delayDuration={0}>
