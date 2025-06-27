@@ -4,6 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { getUserMessageCount } from '@/lib/db/queries';
 import { getEntitlements } from '@/lib/ai/entitlements';
 import { useSession } from 'next-auth/react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function MessageCounter() {
   const { data: session } = useSession();
@@ -96,10 +102,21 @@ export function MessageCounter() {
   };
 
   return (
-    <div className="text-sm">
-      <span className={`${getColorClass()} transition-colors duration-200`}>
-        {remaining} messages remaining
-      </span>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="text-sm cursor-help">
+            <span
+              className={`${getColorClass()} transition-colors duration-200`}
+            >
+              {remaining}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Messages remaining today</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

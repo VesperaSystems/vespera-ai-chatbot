@@ -135,7 +135,7 @@ export async function POST(request: Request) {
           error: 'Unable to load chat',
           message:
             'We encountered an issue loading your chat. Redirecting to a new chat...',
-          redirect: '/chat/new',
+          redirect: '/',
         }),
         {
           status: 500,

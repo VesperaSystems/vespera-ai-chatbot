@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import { MessageCounter } from './message-counter';
 import { FeedbackButton } from '@/components/feedback-button';
+import { ShareButton } from '@/components/share-button';
 import type { Session } from 'next-auth';
 
 function PureChatHeader({
@@ -84,12 +85,19 @@ function PureChatHeader({
         </div>
       )}
 
+      <div className="order-1 md:order-5">
+        <ShareButton
+          chatId={chatId}
+          visibilityType={selectedVisibilityType}
+          className="hidden md:flex"
+        />
+      </div>
+
       {!isReadonly && (
-        <div className="order-1 md:order-4">
+        <div className="order-1 md:order-6">
           <FeedbackButton />
         </div>
       )}
-
     </header>
   );
 }
