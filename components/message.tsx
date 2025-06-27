@@ -231,6 +231,7 @@ const PurePreviewMessage = ({
                 vote={vote}
                 allVotes={allVotes}
                 isLoading={isLoading}
+                isReadonly={isReadonly}
               />
             )}
           </div>

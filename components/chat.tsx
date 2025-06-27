@@ -135,8 +135,9 @@ export function Chat({
     }
   }, [query, append, hasAppendedQuery, id]);
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
+  const swrKey = messages.length > 0 ? `/api/vote?chatId=${id}` : null;
+  const { data: votes, error: votesError } = useSWR<Array<Vote>>(
+    swrKey,
     fetcher,
   );
 
