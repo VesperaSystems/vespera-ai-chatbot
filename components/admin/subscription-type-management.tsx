@@ -9,20 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Edit, Trash2, Plus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
-// eslint-disable-next-line import/no-named-as-default
-import Badge from '../ui/badge';
-
-interface SubscriptionType {
-  id: number;
-  name: string;
-  price: number;
-  maxMessagesPerDay: number;
-  availableModels: string[];
-  description?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Badge } from '@/components/ui/badge';
+import type { SubscriptionType } from '@/lib/db/schema';
 
 interface SubscriptionTypeFormData {
   name: string;
@@ -78,7 +66,11 @@ export function SubscriptionTypeManagement({
       name: subscriptionType.name,
       price: subscriptionType.price,
       maxMessagesPerDay: subscriptionType.maxMessagesPerDay,
-      availableModels: subscriptionType.availableModels,
+      availableModels: Array.isArray(subscriptionType.availableModels)
+        ? (subscriptionType.availableModels as string[])
+        : typeof subscriptionType.availableModels === 'string'
+          ? (JSON.parse(subscriptionType.availableModels) as string[])
+          : [],
       description: subscriptionType.description || '',
       isActive: subscriptionType.isActive,
     });
@@ -356,7 +348,14 @@ export function SubscriptionTypeManagement({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {subscriptionType.availableModels.map((model) => (
+                    {(Array.isArray(subscriptionType.availableModels)
+                      ? (subscriptionType.availableModels as string[])
+                      : typeof subscriptionType.availableModels === 'string'
+                        ? (JSON.parse(
+                            subscriptionType.availableModels,
+                          ) as string[])
+                        : []
+                    ).map((model: string) => (
                       <Badge key={model} variant="outline" className="text-xs">
                         {model}
                       </Badge>
