@@ -6,8 +6,8 @@ import { getUser } from '@/lib/db/queries';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
-export type SubscriptionType =
-  (typeof SUBSCRIPTION_TYPES)[keyof typeof SUBSCRIPTION_TYPES];
+// Use the database schema type for subscription type
+export type SubscriptionType = number;
 
 type ExtendedUser = {
   id: string;

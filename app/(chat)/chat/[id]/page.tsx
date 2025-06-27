@@ -1,4 +1,3 @@
-
 import { notFound, redirect } from 'next/navigation';
 
 import { auth } from '@/app/(auth)/auth';
@@ -7,6 +6,7 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
+import type { VisibilityType } from '@/components/visibility-selector';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -58,7 +58,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
           id={chat.id}
           initialMessages={convertToUIMessages(messagesFromDb)}
           initialChatModel={chat.model}
-          initialVisibilityType={chat.visibility}
+          initialVisibilityType={chat.visibility as VisibilityType}
           isReadonly={session?.user?.id !== chat.userId}
           session={session}
           autoResume={true}

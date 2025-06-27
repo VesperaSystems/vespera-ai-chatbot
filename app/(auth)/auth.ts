@@ -1,31 +1,10 @@
 import { compare } from 'bcrypt-ts';
-import NextAuth, { type DefaultSession } from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
-
-export type UserType = 'regular';
-
-type ExtendedUser = {
-  id: string;
-  email: string;
-  subscriptionType: number;
-  isAdmin: boolean;
-};
-
-declare module 'next-auth' {
-  interface Session {
-    user: ExtendedUser & DefaultSession['user'];
-  }
-
-  interface User extends ExtendedUser {}
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT extends ExtendedUser {}
-}
 
 export const {
   handlers: { GET, POST },
@@ -62,7 +41,7 @@ export const {
         const subscriptionType = Number(user.subscriptionType);
         const validSubscriptionType = Object.values(
           SUBSCRIPTION_TYPES,
-        ).includes(subscriptionType)
+        ).includes(subscriptionType as 1 | 2 | 3)
           ? subscriptionType
           : SUBSCRIPTION_TYPES.REGULAR;
 
@@ -79,7 +58,7 @@ export const {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = user.id ?? '';
         token.email = user.email;
         token.subscriptionType = Number(user.subscriptionType);
         token.isAdmin = user.isAdmin;
@@ -87,7 +66,7 @@ export const {
       return token;
     },
     async session({ session, token }) {
-      if (token) {
+      if (token?.id && token?.email) {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.subscriptionType = Number(token.subscriptionType);
