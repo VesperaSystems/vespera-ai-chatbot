@@ -5,7 +5,6 @@ const config: NextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    serverComponentsExternalPackages: ['bcrypt-ts'],
   },
   images: {
     remotePatterns: [

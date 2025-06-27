@@ -1,18 +1,45 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface User {
   id: string;
   email: string;
   isAdmin: boolean;
+  subscriptionType: number;
+}
+
+interface SubscriptionType {
+  id: number;
+  name: string;
+}
+
+async function fetchSubscriptionTypes(): Promise<SubscriptionType[]> {
+  const res = await fetch('/api/admin/subscription-types');
+  if (!res.ok) throw new Error('Failed to fetch subscription types');
+  return res.json();
 }
 
 export function UserManagement({ users: initialUsers }: { users: User[] }) {
   const [users, setUsers] = useState(initialUsers);
+  const [subscriptionTypes, setSubscriptionTypes] = useState<
+    SubscriptionType[]
+  >([]);
+
+  useEffect(() => {
+    fetchSubscriptionTypes()
+      .then(setSubscriptionTypes)
+      .catch(() => toast.error('Failed to load subscription types'));
+  }, []);
 
   const updateUserAdminStatus = async (userId: string, isAdmin: boolean) => {
     try {
@@ -38,6 +65,40 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
     }
   };
 
+  const updateUserSubscriptionType = async (
+    userId: string,
+    subscriptionType: number,
+  ) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, subscriptionType }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user subscription type');
+      }
+
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, subscriptionType } : user,
+        ),
+      );
+      toast.success('User subscription type updated successfully');
+    } catch (error) {
+      console.error('Error updating user subscription type:', error);
+      toast.error('Failed to update user subscription type');
+    }
+  };
+
+  const getSubscriptionTypeName = (type: number) => {
+    const found = subscriptionTypes.find((t) => t.id === type);
+    return found ? found.name : 'Unknown';
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -55,10 +116,30 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{user.email}</p>
               <p className="text-sm text-muted-foreground">
-                {user.isAdmin ? 'Admin' : 'Regular User'}
+                {user.isAdmin ? 'Admin' : 'Regular User'} •{' '}
+                {getSubscriptionTypeName(user.subscriptionType)}
               </p>
             </div>
             <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Select
+                  value={user.subscriptionType.toString()}
+                  onValueChange={(value) =>
+                    updateUserSubscriptionType(user.id, Number(value))
+                  }
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subscriptionTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={user.isAdmin}

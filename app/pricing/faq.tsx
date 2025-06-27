@@ -55,8 +55,8 @@ export function PricingFAQ() {
         Frequently Asked Questions
       </h2>
       <Accordion type="single" collapsible className="max-w-3xl mx-auto">
-        {faqs.map((faq, index) => (
-          <AccordionItem key={index} value={`item-${index}`}>
+        {faqs.map((faq) => (
+          <AccordionItem key={faq.question} value={faq.question}>
             <AccordionTrigger className="text-left">
               {faq.question}
             </AccordionTrigger>

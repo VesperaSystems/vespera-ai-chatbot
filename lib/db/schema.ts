@@ -9,6 +9,8 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  integer,
+  serial,
 } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('User', {
@@ -16,20 +18,20 @@ export const user = pgTable('User', {
   email: varchar('email', { length: 64 }).notNull(),
   password: varchar('password', { length: 64 }),
   isAdmin: boolean('isAdmin').notNull().default(false),
+  subscriptionType: integer('subscriptionType').notNull().default(1), // 1 = regular, 2 = premium, 3 = enterprise
 });
 
 export type User = InferSelectModel<typeof user>;
 
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
-  title: text('title').notNull(),
   userId: uuid('userId')
     .notNull()
     .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
+  title: varchar('title').notNull(),
+  visibility: varchar('visibility').notNull(),
+  model: varchar('model').notNull().default('chat-model'),
+  createdAt: timestamp('createdAt').notNull(),
 });
 
 export type Chat = InferSelectModel<typeof chat>;
@@ -169,3 +171,28 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const userMessageCounts = pgTable('user_message_counts', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id),
+  date: timestamp('date').notNull().defaultNow(),
+  count: integer('count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const subscriptionTypes = pgTable('subscription_types', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 64 }).notNull(),
+  price: integer('price').notNull(), // Price in cents
+  maxMessagesPerDay: integer('max_messages_per_day').notNull(),
+  availableModels: json('available_models').notNull(), // Array of model IDs
+  description: text('description'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export type SubscriptionType = InferSelectModel<typeof subscriptionTypes>;

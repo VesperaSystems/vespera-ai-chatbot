@@ -1,15 +1,18 @@
 import { compare } from 'bcrypt-ts';
-import NextAuth, { type DefaultSession } from 'next-auth';
+import type NextAuth from 'next-auth';
+import type { DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { DUMMY_PASSWORD } from '@/lib/constants';
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
-export type UserType = 'regular';
+// Use the database schema type for subscription type
+export type SubscriptionType = number;
 
 type ExtendedUser = {
   id: string;
   email: string;
-  type: UserType;
+  subscriptionType: SubscriptionType;
   isAdmin: boolean;
 };
 
@@ -74,10 +77,17 @@ export const authConfig = {
         const passwordsMatch = await compare(password, user.password);
         if (!passwordsMatch) return null;
 
+        // Ensure we have a valid subscription type
+        const subscriptionType = Number(user.subscriptionType);
+        // Accept any positive integer as valid subscription type
+        // The database will handle validation of actual subscription types
+        const validSubscriptionType =
+          subscriptionType > 0 ? subscriptionType : SUBSCRIPTION_TYPES.REGULAR;
+
         return {
           id: user.id,
           email: user.email,
-          type: 'regular' as const,
+          subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
         };
       },

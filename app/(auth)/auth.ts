@@ -1,30 +1,10 @@
 import { compare } from 'bcrypt-ts';
-import NextAuth, { type DefaultSession } from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
-
-export type UserType = 'regular';
-
-type ExtendedUser = {
-  id: string;
-  email: string;
-  type: UserType;
-  isAdmin: boolean;
-};
-
-declare module 'next-auth' {
-  interface Session {
-    user: ExtendedUser & DefaultSession['user'];
-  }
-
-  interface User extends ExtendedUser {}
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT extends ExtendedUser {}
-}
+import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
 export const {
   handlers: { GET, POST },
@@ -57,10 +37,18 @@ export const {
         const passwordsMatch = await compare(password, user.password);
         if (!passwordsMatch) return null;
 
+        // Ensure we have a valid subscription type
+        const subscriptionType = Number(user.subscriptionType);
+        const validSubscriptionType = Object.values(
+          SUBSCRIPTION_TYPES,
+        ).includes(subscriptionType as 1 | 2 | 3)
+          ? subscriptionType
+          : SUBSCRIPTION_TYPES.REGULAR;
+
         return {
           id: user.id,
           email: user.email,
-          type: 'regular',
+          subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
         };
       },
@@ -69,17 +57,19 @@ export const {
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, user }) {
-      if (user?.id) {
-        token.id = user.id;
-        token.type = user.type;
+      if (user) {
+        token.id = user.id ?? '';
+        token.email = user.email;
+        token.subscriptionType = Number(user.subscriptionType);
         token.isAdmin = user.isAdmin;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
+      if (token?.id && token?.email) {
         session.user.id = token.id;
-        session.user.type = token.type;
+        session.user.email = token.email;
+        session.user.subscriptionType = Number(token.subscriptionType);
         session.user.isAdmin = token.isAdmin;
       }
       return session;

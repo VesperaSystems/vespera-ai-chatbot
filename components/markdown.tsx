@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import React, { memo } from 'react';
+import React, { memo, Children, isValidElement } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './code-block';
@@ -9,15 +9,15 @@ const components: Partial<Components> = {
   code: CodeBlock,
   pre: ({ children }) => {
     // If children is a code element, render it directly
-    if (React.isValidElement(children) && children.type === 'code') {
+    if (isValidElement(children) && children.type === 'code') {
       return children;
     }
     return <>{children}</>;
   },
   p: ({ children, ...props }) => {
     // Check if children contains a code block
-    const hasCodeBlock = React.Children.toArray(children).some(
-      (child) => React.isValidElement(child) && child.type === CodeBlock,
+    const hasCodeBlock = Children.toArray(children).some(
+      (child) => isValidElement(child) && child.type === CodeBlock,
     );
 
     // If it contains a code block, don't wrap in p tag

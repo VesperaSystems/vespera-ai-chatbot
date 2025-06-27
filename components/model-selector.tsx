@@ -1,6 +1,12 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
+import {
+  startTransition,
+  useMemo,
+  useOptimistic,
+  useState,
+  useEffect,
+} from 'react';
 
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
@@ -13,36 +19,133 @@ import {
 import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
 
-import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
-import { ENTITLEMENTS } from '@/lib/ai/entitlements';
+import { CheckCircleFillIcon, ChevronDownIcon, LockIcon } from './icons';
+import { getEntitlements, SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 export function ModelSelector({
   session,
   selectedModelId,
+  chatId,
   className,
 }: {
   session: Session;
   selectedModelId: string;
+  chatId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
     useOptimistic(selectedModelId);
+  const [entitlements, setEntitlements] = useState<Record<number, any>>({});
+  const [isLoadingEntitlements, setIsLoadingEntitlements] = useState(true);
 
-  const userType = session.user.type;
-  const { availableChatModelIds } = ENTITLEMENTS[userType];
+  useEffect(() => {
+    const fetchEntitlements = async () => {
+      try {
+        setIsLoadingEntitlements(true);
+        const entitlementsMap = await getEntitlements();
+        setEntitlements(entitlementsMap);
+      } catch (error) {
+        console.error('Failed to fetch entitlements:', error);
+      } finally {
+        setIsLoadingEntitlements(false);
+      }
+    };
+    fetchEntitlements();
+  }, []);
 
-  const availableChatModels = chatModels.filter((chatModel) =>
-    availableChatModelIds.includes(chatModel.id),
-  );
+  // Ensure we have a valid subscription type, defaulting to REGULAR if invalid
+  const subscriptionType = useMemo(() => {
+    const type = session.user.subscriptionType;
+
+    // Don't validate until entitlements are loaded
+    if (isLoadingEntitlements) {
+      return type; // Return the original type while loading
+    }
+
+    // Check if the type exists in entitlements
+    if (entitlements[type]) {
+      return type;
+    }
+
+    // Only warn if entitlements are loaded and the type is not found
+    // But be more lenient - accept any positive integer as potentially valid
+    if (
+      !isLoadingEntitlements &&
+      Object.keys(entitlements).length > 0 &&
+      type <= 0
+    ) {
+      console.warn(`Invalid subscription type: ${type}, defaulting to REGULAR`);
+      return SUBSCRIPTION_TYPES.REGULAR;
+    }
+
+    // If entitlements are loaded but type not found, it might be a new subscription type
+    // Return the original type and let the system handle it gracefully
+    return type;
+  }, [session.user.subscriptionType, entitlements, isLoadingEntitlements]);
+
+  const availableChatModelIds = useMemo(() => {
+    return (
+      entitlements[subscriptionType]?.availableChatModelIds ?? ['chat-model']
+    );
+  }, [entitlements, subscriptionType]);
+
+  // Filter available models based on user's subscription type
+  const availableChatModels = useMemo(() => {
+    return chatModels.filter((chatModel) =>
+      availableChatModelIds.includes(chatModel.id),
+    );
+  }, [availableChatModelIds]);
 
   const selectedChatModel = useMemo(
     () =>
       availableChatModels.find(
         (chatModel) => chatModel.id === optimisticModelId,
-      ),
+      ) || availableChatModels[0], // Fallback to first available model if selected model is not available
     [optimisticModelId, availableChatModels],
   );
+
+  const handleModelChange = async (modelId: string) => {
+    if (!availableChatModelIds.includes(modelId)) return;
+    setOpen(false);
+
+    startTransition(() => {
+      setOptimisticModelId(modelId);
+      saveChatModelAsCookie(modelId);
+
+      // Save the model to the database
+      fetch(`/api/chat/${chatId}/model`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: modelId }),
+      });
+    });
+  };
+
+  const getUpgradeMessage = (modelId: string) => {
+    if (subscriptionType === SUBSCRIPTION_TYPES.REGULAR) {
+      if (modelId === 'gpt-4')
+        return 'Upgrade to Enterprise plan to access GPT-4';
+      if (modelId === 'gpt-3.5' || modelId === 'chat-model-reasoning') {
+        return 'Upgrade to Premium plan to access advanced models';
+      }
+    }
+    if (
+      subscriptionType === SUBSCRIPTION_TYPES.PREMIUM &&
+      modelId === 'gpt-4'
+    ) {
+      return 'Upgrade to Enterprise plan to access GPT-4';
+    }
+    return '';
+  };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -63,41 +166,60 @@ export function ModelSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {availableChatModels.map((chatModel) => {
+        {chatModels.map((chatModel) => {
           const { id } = chatModel;
+          const isAvailable = availableChatModelIds.includes(id);
+          const upgradeMessage = getUpgradeMessage(id);
 
-          return (
+          const menuItem = (
             <DropdownMenuItem
               data-testid={`model-selector-item-${id}`}
               key={id}
-              onSelect={() => {
-                setOpen(false);
-
-                startTransition(() => {
-                  setOptimisticModelId(id);
-                  saveChatModelAsCookie(id);
-                });
-              }}
+              onSelect={() => handleModelChange(id)}
               data-active={id === optimisticModelId}
-              asChild
+              className={cn(
+                'gap-4 group/item flex flex-row justify-between items-center w-full',
+                !isAvailable && 'opacity-50 cursor-not-allowed',
+              )}
+              disabled={!isAvailable}
             >
-              <button
-                type="button"
-                className="gap-4 group/item flex flex-row justify-between items-center w-full"
-              >
-                <div className="flex flex-col gap-1 items-start">
-                  <div>{chatModel.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {chatModel.description}
-                  </div>
+              <div className="flex flex-col gap-1 items-start">
+                <div className="flex items-center gap-2">
+                  {chatModel.name}
+                  {!isAvailable && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <LockIcon size={12} />
+                        </TooltipTrigger>
+                        <TooltipContent>{upgradeMessage}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
+                <div className="text-xs text-muted-foreground">
+                  {chatModel.description}
+                </div>
+              </div>
 
-                <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
-                  <CheckCircleFillIcon />
-                </div>
-              </button>
+              <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
+                <CheckCircleFillIcon />
+              </div>
             </DropdownMenuItem>
           );
+
+          if (!isAvailable) {
+            return (
+              <TooltipProvider key={id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>{menuItem}</TooltipTrigger>
+                  <TooltipContent>{upgradeMessage}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          return menuItem;
         })}
       </DropdownMenuContent>
     </DropdownMenu>

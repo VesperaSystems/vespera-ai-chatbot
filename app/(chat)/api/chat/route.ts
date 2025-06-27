@@ -5,7 +5,7 @@ import {
   smoothStream,
   streamText,
 } from 'ai';
-import { auth, type UserType } from '@/app/(auth)/auth';
+import { auth } from '@/app/(auth)/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
@@ -14,8 +14,10 @@ import {
   getMessageCountByUserId,
   getMessagesByChatId,
   getStreamIdsByChatId,
+  incrementUserMessageCount,
   saveChat,
   saveMessages,
+  updateChatModel,
 } from '@/lib/db/queries';
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -25,7 +27,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { ENTITLEMENTS } from '@/lib/ai/entitlements';
+import { getEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -80,14 +82,35 @@ export async function POST(request: Request) {
       return new Response('Error: User not authenticated', { status: 401 });
     }
 
-    const userType: UserType = session.user.type;
+    const subscriptionType = session.user.subscriptionType;
 
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
     });
 
-    if (messageCount > ENTITLEMENTS[userType].maxMessagesPerDay) {
+    const entitlementsMap = await getEntitlements();
+    const entitlements = entitlementsMap[subscriptionType];
+
+    if (!entitlements) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid subscription type',
+          message: 'Please contact support to resolve this issue.',
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    }
+
+    if (
+      entitlements.maxMessagesPerDay !== -1 &&
+      messageCount > entitlements.maxMessagesPerDay
+    ) {
       return new Response(
         JSON.stringify({
           error:
@@ -105,7 +128,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const chat = await getChatById({ id });
+    const chat = await getChatById({ id }).catch((error) => {
+      console.error('Error fetching chat:', error);
+      return new Response(
+        JSON.stringify({
+          error: 'Unable to load chat',
+          message:
+            'We encountered an issue loading your chat. Redirecting to a new chat...',
+          redirect: '/chat/new',
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    });
+
+    if (chat instanceof Response) {
+      return chat;
+    }
 
     if (!chat) {
       const title = await generateTitleFromUserMessage({
@@ -117,12 +160,16 @@ export async function POST(request: Request) {
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
+        model: selectedChatModel,
       });
     } else {
       if (chat.userId !== session.user.id) {
         return new Response('Error: Access denied to this chat', {
           status: 403,
         });
+      }
+      if (chat.model !== selectedChatModel) {
+        await updateChatModel({ id, model: selectedChatModel });
       }
     }
 
@@ -155,6 +202,11 @@ export async function POST(request: Request) {
         },
       ],
     });
+
+    // Increment the user's message count
+    if (session.user?.id) {
+      await incrementUserMessageCount(session.user.id);
+    }
 
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });

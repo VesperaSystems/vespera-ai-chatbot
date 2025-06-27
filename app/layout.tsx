@@ -2,6 +2,8 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { HelpScoutBeacon } from '@/components/helpscout-beacon';
+import { cn } from '@/lib/utils';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
@@ -17,6 +19,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 const geist = Geist({
@@ -73,7 +76,13 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen antialiased bg-background">
+      <body
+        className={cn(
+          'min-h-dvh bg-background font-sans antialiased',
+          geist.variable,
+          geistMono.variable,
+        )}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -83,6 +92,7 @@ export default async function RootLayout({
           <Toaster position="top-center" />
           <SessionProvider>
             <main className="flex min-h-screen flex-col">{children}</main>
+            <HelpScoutBeacon />
           </SessionProvider>
         </ThemeProvider>
       </body>
