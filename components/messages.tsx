@@ -17,6 +17,7 @@ interface MessagesProps {
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   isArtifactVisible: boolean;
+  session: any;
 }
 
 function PureMessages({
@@ -27,6 +28,7 @@ function PureMessages({
   setMessages,
   reload,
   isReadonly,
+  session,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -38,6 +40,8 @@ function PureMessages({
     chatId,
     status,
   });
+
+  const userId = session?.user?.id;
 
   return (
     <div
@@ -53,10 +57,14 @@ function PureMessages({
           message={message}
           isLoading={status === 'streaming' && messages.length - 1 === index}
           vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
+            votes && userId
+              ? votes.find(
+                  (vote) =>
+                    vote.messageId === message.id && vote.userId === userId,
+                )
               : undefined
           }
+          allVotes={votes}
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}

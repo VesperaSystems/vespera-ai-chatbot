@@ -232,30 +232,45 @@ export async function voteMessage({
   chatId,
   messageId,
   type,
+  userId,
 }: {
   chatId: string;
   messageId: string;
   type: 'up' | 'down';
+  userId: string;
 }) {
   try {
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      .where(
+        and(
+          eq(vote.messageId, messageId),
+          eq(vote.chatId, chatId),
+          eq(vote.userId, userId),
+        ),
+      );
 
     if (existingVote) {
       return await db
         .update(vote)
         .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+        .where(
+          and(
+            eq(vote.messageId, messageId),
+            eq(vote.chatId, chatId),
+            eq(vote.userId, userId),
+          ),
+        );
     }
     return await db.insert(vote).values({
       chatId,
       messageId,
+      userId,
       isUpvoted: type === 'up',
     });
   } catch (error) {
-    console.error('Failed to upvote message in database', error);
+    console.error('Failed to vote message in database', error);
     throw error;
   }
 }

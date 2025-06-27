@@ -24,6 +24,7 @@ const PurePreviewMessage = ({
   chatId,
   message,
   vote,
+  allVotes,
   isLoading,
   setMessages,
   reload,
@@ -33,6 +34,7 @@ const PurePreviewMessage = ({
   chatId: string;
   message: UIMessage;
   vote: Vote | undefined;
+  allVotes: Array<Vote> | undefined;
   isLoading: boolean;
   setMessages: UseChatHelpers['setMessages'];
   reload: UseChatHelpers['reload'];
@@ -221,12 +223,13 @@ const PurePreviewMessage = ({
               }
             })}
 
-            {!isReadonly && (
+            {(!isReadonly || message.role === 'assistant') && (
               <MessageActions
                 key={`action-${message.id}`}
                 chatId={chatId}
                 message={message}
                 vote={vote}
+                allVotes={allVotes}
                 isLoading={isLoading}
               />
             )}

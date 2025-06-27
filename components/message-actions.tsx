@@ -20,11 +20,13 @@ export function PureMessageActions({
   chatId,
   message,
   vote,
+  allVotes,
   isLoading,
 }: {
   chatId: string;
   message: Message;
   vote: Vote | undefined;
+  allVotes: Array<Vote> | undefined;
   isLoading: boolean;
 }) {
   const { mutate } = useSWRConfig();
@@ -32,6 +34,12 @@ export function PureMessageActions({
 
   if (isLoading) return null;
   if (message.role === 'user') return null;
+
+  // Calculate vote counts for this message
+  const messageVotes =
+    allVotes?.filter((v) => v.messageId === message.id) || [];
+  const upvoteCount = messageVotes.filter((v) => v.isUpvoted).length;
+  const downvoteCount = messageVotes.filter((v) => !v.isUpvoted).length;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -67,8 +75,11 @@ export function PureMessageActions({
           <TooltipTrigger asChild>
             <Button
               data-testid="message-upvote"
-              className="py-1 px-2 h-fit text-muted-foreground !pointer-events-auto"
-              disabled={vote?.isUpvoted}
+              className={`py-1 px-2 h-fit text-muted-foreground !pointer-events-auto relative ${
+                vote?.isUpvoted
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                  : ''
+              }`}
               variant="outline"
               onClick={async () => {
                 const upvote = fetch('/api/vote', {
@@ -83,13 +94,18 @@ export function PureMessageActions({
                 toast.promise(upvote, {
                   loading: 'Upvoting Response...',
                   success: () => {
-                    mutate<Array<Vote>>(
+                    // Optimistically update the vote count
+                    mutate(
                       `/api/vote?chatId=${chatId}`,
-                      (currentVotes) => {
+                      (currentVotes: Array<Vote> | undefined) => {
                         if (!currentVotes) return [];
 
                         const votesWithoutCurrent = currentVotes.filter(
-                          (vote) => vote.messageId !== message.id,
+                          (v) =>
+                            !(
+                              v.messageId === message.id &&
+                              v.userId === vote?.userId
+                            ),
                         );
 
                         return [
@@ -97,6 +113,7 @@ export function PureMessageActions({
                           {
                             chatId,
                             messageId: message.id,
+                            userId: vote?.userId || '',
                             isUpvoted: true,
                           },
                         ];
@@ -104,25 +121,33 @@ export function PureMessageActions({
                       { revalidate: false },
                     );
 
-                    return 'Upvoted Response!';
+                    return 'Upvoted!';
                   },
-                  error: 'Failed to upvote response.',
+                  error: 'Failed to upvote.',
                 });
               }}
             >
               <ThumbUpIcon />
+              {upvoteCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                  {upvoteCount}
+                </span>
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Upvote Response</TooltipContent>
+          <TooltipContent>Upvote</TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               data-testid="message-downvote"
-              className="py-1 px-2 h-fit text-muted-foreground !pointer-events-auto"
+              className={`py-1 px-2 h-fit text-muted-foreground !pointer-events-auto relative ${
+                vote && !vote.isUpvoted
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                  : ''
+              }`}
               variant="outline"
-              disabled={vote && !vote.isUpvoted}
               onClick={async () => {
                 const downvote = fetch('/api/vote', {
                   method: 'PATCH',
@@ -136,13 +161,18 @@ export function PureMessageActions({
                 toast.promise(downvote, {
                   loading: 'Downvoting Response...',
                   success: () => {
-                    mutate<Array<Vote>>(
+                    // Optimistically update the vote count
+                    mutate(
                       `/api/vote?chatId=${chatId}`,
-                      (currentVotes) => {
+                      (currentVotes: Array<Vote> | undefined) => {
                         if (!currentVotes) return [];
 
                         const votesWithoutCurrent = currentVotes.filter(
-                          (vote) => vote.messageId !== message.id,
+                          (v) =>
+                            !(
+                              v.messageId === message.id &&
+                              v.userId === vote?.userId
+                            ),
                         );
 
                         return [
@@ -150,6 +180,7 @@ export function PureMessageActions({
                           {
                             chatId,
                             messageId: message.id,
+                            userId: vote?.userId || '',
                             isUpvoted: false,
                           },
                         ];
@@ -157,16 +188,21 @@ export function PureMessageActions({
                       { revalidate: false },
                     );
 
-                    return 'Downvoted Response!';
+                    return 'Downvoted!';
                   },
-                  error: 'Failed to downvote response.',
+                  error: 'Failed to downvote.',
                 });
               }}
             >
               <ThumbDownIcon />
+              {downvoteCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full size-4 flex items-center justify-center">
+                  {downvoteCount}
+                </span>
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Downvote Response</TooltipContent>
+          <TooltipContent>Downvote</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>
