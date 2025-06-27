@@ -5,7 +5,6 @@ import {
   message,
   type MessageDeprecated,
   messageDeprecated,
-  vote,
   voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -38,6 +37,7 @@ type NewMessageInsert = {
 type NewVoteInsert = {
   messageId: string;
   chatId: string;
+  userId: string;
   isUpvoted: boolean;
 };
 
@@ -199,11 +199,11 @@ async function migrateMessages() {
             if (msg.role === 'assistant') {
               const voteByMessage = votes.find((v) => v.messageId === msg.id);
               if (voteByMessage) {
-                newVotesToInsert.push({
-                  messageId: msg.id,
-                  chatId: msg.chatId,
-                  isUpvoted: voteByMessage.isUpvoted,
-                });
+                // Skip votes that don't have user information since deprecated votes don't have userId
+                // and we can't migrate them without user context
+                console.warn(
+                  `Skipping vote migration for message ${msg.id} - no user information available`,
+                );
               }
             }
           }
@@ -229,12 +229,8 @@ async function migrateMessages() {
       }
     }
 
-    for (let j = 0; j < newVotesToInsert.length; j += INSERT_BATCH_SIZE) {
-      const voteBatch = newVotesToInsert.slice(j, j + INSERT_BATCH_SIZE);
-      if (voteBatch.length > 0) {
-        await db.insert(vote).values(voteBatch);
-      }
-    }
+    // Note: Vote migration is skipped because deprecated votes don't have userId
+    // and the new vote schema requires userId
   }
 
   console.info(`Migration completed: ${processedCount} chats processed`);

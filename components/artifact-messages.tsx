@@ -55,6 +55,7 @@ function PureArtifactMessages({
               ? votes.find((vote) => vote.messageId === message.id)
               : undefined
           }
+          allVotes={votes}
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}

@@ -16,7 +16,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     const chat = await getChatById({ id });
 
     if (!chat) {
-      redirect('/chat/new');
+      redirect('/');
     }
 
     const session = await auth();
@@ -68,6 +68,6 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     );
   } catch (error) {
     console.error('Error loading chat:', error);
-    redirect('/chat/new');
+    redirect('/');
   }
 }

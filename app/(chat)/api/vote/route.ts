@@ -21,7 +21,9 @@ export async function GET(request: Request) {
     return new Response('Chat not found', { status: 404 });
   }
 
-  if (chat.userId !== session.user.id) {
+  // Allow fetching votes for public chats by any authenticated user
+  // For private chats, only the owner can fetch votes
+  if (chat.visibility === 'private' && chat.userId !== session.user.id) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -54,7 +56,9 @@ export async function PATCH(request: Request) {
     return new Response('Chat not found', { status: 404 });
   }
 
-  if (chat.userId !== session.user.id) {
+  // Allow voting on public chats by any authenticated user
+  // For private chats, only the owner can vote
+  if (chat.visibility === 'private' && chat.userId !== session.user.id) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -62,6 +66,7 @@ export async function PATCH(request: Request) {
     chatId,
     messageId,
     type: type,
+    userId: session.user.id,
   });
 
   return new Response('Message voted', { status: 200 });

@@ -2,11 +2,7 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import {
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -14,6 +10,7 @@ import { fetcher, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
+import { ReadOnlyBanner } from './read-only-banner';
 import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { unstable_serialize } from 'swr/infinite';
@@ -138,8 +135,9 @@ export function Chat({
     }
   }, [query, append, hasAppendedQuery, id]);
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
+  const swrKey = messages.length > 0 ? `/api/vote?chatId=${id}` : null;
+  const { data: votes, error: votesError } = useSWR<Array<Vote>>(
+    swrKey,
     fetcher,
   );
 
@@ -165,6 +163,12 @@ export function Chat({
           session={session}
         />
 
+        <ReadOnlyBanner
+          chatId={id}
+          isReadonly={isReadonly}
+          isPublic={visibilityType === 'public'}
+        />
+
         <Messages
           chatId={id}
           status={status}
@@ -174,6 +178,7 @@ export function Chat({
           reload={reload}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
+          session={session}
         />
 
         <div className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
