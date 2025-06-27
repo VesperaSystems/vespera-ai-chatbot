@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -8,8 +10,20 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Check } from 'lucide-react';
+import { openHelpScout, identifyUser } from '@/components/helpscout-beacon';
 
 export default function PricingPage() {
+  const handleContactSales = () => {
+    // Identify the user if they're logged in (optional for sales inquiries)
+    identifyUser('sales-inquiry@vespera.ai', {
+      name: 'Sales Inquiry',
+      email: 'sales-inquiry@vespera.ai',
+      inquiryType: 'Enterprise Sales',
+      plan: 'Enterprise',
+    });
+    openHelpScout();
+  };
+
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-16">
@@ -134,7 +148,9 @@ export default function PricingPage() {
             </ul>
           </CardContent>
           <CardFooter>
-            <Button className="w-full">Contact Sales</Button>
+            <Button className="w-full" onClick={handleContactSales}>
+              Contact Sales
+            </Button>
           </CardFooter>
         </Card>
       </div>

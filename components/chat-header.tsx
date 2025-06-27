@@ -1,6 +1,4 @@
 'use client';
-
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 import { useEffect, useState, memo } from 'react';
@@ -8,11 +6,12 @@ import { useEffect, useState, memo } from 'react';
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, InfoIcon } from './icons';
+import { PlusIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import { MessageCounter } from './message-counter';
+import { FeedbackButton } from '@/components/feedback-button';
 import type { Session } from 'next-auth';
 
 function PureChatHeader({
@@ -85,15 +84,12 @@ function PureChatHeader({
         </div>
       )}
 
-      <Button
-        className="bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900 hidden md:flex py-1.5 px-2 h-fit md:h-[34px] order-4 md:ml-auto"
-        asChild
-      >
-        <Link href={`https://danielmolloy.com`} target="_noblank">
-          <InfoIcon size={16} />
-          Help
-        </Link>
-      </Button>
+      {!isReadonly && (
+        <div className="order-1 md:order-4">
+          <FeedbackButton />
+        </div>
+      )}
+
     </header>
   );
 }
