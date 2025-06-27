@@ -675,6 +675,14 @@ export async function getAllSubscriptionTypes() {
   return results.map((type) => ({
     ...type,
     description: type.description ?? undefined,
+    createdAt:
+      type.createdAt instanceof Date
+        ? type.createdAt.toISOString()
+        : type.createdAt,
+    updatedAt:
+      type.updatedAt instanceof Date
+        ? type.updatedAt.toISOString()
+        : type.updatedAt,
     availableModels: Array.isArray(type.availableModels)
       ? (type.availableModels as string[])
       : typeof type.availableModels === 'string'
