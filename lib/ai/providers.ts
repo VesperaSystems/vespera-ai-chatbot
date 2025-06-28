@@ -44,10 +44,10 @@ const createChatCompletion: LanguageModelV1 = {
           index,
           role: typeof msg === 'string' ? 'string' : msg.role,
           hasAttachments:
-            typeof msg === 'object' && !!msg.experimental_attachments,
+            typeof msg === 'object' && !!(msg as any).experimental_attachments,
           attachmentCount:
-            typeof msg === 'object' && msg.experimental_attachments
-              ? msg.experimental_attachments.length
+            typeof msg === 'object' && (msg as any).experimental_attachments
+              ? (msg as any).experimental_attachments.length
               : 0,
         })),
       });
@@ -56,9 +56,9 @@ const createChatCompletion: LanguageModelV1 = {
       const hasImages = options.prompt.some(
         (msg) =>
           typeof msg === 'object' &&
-          msg.experimental_attachments &&
-          Array.isArray(msg.experimental_attachments) &&
-          msg.experimental_attachments.some((att: any) =>
+          (msg as any).experimental_attachments &&
+          Array.isArray((msg as any).experimental_attachments) &&
+          (msg as any).experimental_attachments.some((att: any) =>
             att.contentType?.startsWith('image'),
           ),
       );
@@ -77,9 +77,9 @@ const createChatCompletion: LanguageModelV1 = {
 
         // Handle multimodal messages with experimental_attachments
         if (
-          msg.experimental_attachments &&
-          Array.isArray(msg.experimental_attachments) &&
-          msg.experimental_attachments.length > 0
+          (msg as any).experimental_attachments &&
+          Array.isArray((msg as any).experimental_attachments) &&
+          (msg as any).experimental_attachments.length > 0
         ) {
           const content: any[] = [];
 
@@ -92,7 +92,7 @@ const createChatCompletion: LanguageModelV1 = {
           }
 
           // Add image attachments
-          for (const attachment of msg.experimental_attachments) {
+          for (const attachment of (msg as any).experimental_attachments) {
             if (attachment.contentType?.startsWith('image') && attachment.url) {
               console.log('AI Provider: Adding image attachment:', {
                 url: attachment.url,
@@ -226,10 +226,10 @@ const createVisionChatCompletion: LanguageModelV1 = {
           index,
           role: typeof msg === 'string' ? 'string' : msg.role,
           hasAttachments:
-            typeof msg === 'object' && !!msg.experimental_attachments,
+            typeof msg === 'object' && !!(msg as any).experimental_attachments,
           attachmentCount:
-            typeof msg === 'object' && msg.experimental_attachments
-              ? msg.experimental_attachments.length
+            typeof msg === 'object' && (msg as any).experimental_attachments
+              ? (msg as any).experimental_attachments.length
               : 0,
         })),
       });
@@ -241,8 +241,8 @@ const createVisionChatCompletion: LanguageModelV1 = {
 
         // Handle multimodal messages with experimental_attachments
         if (
-          msg.experimental_attachments &&
-          Array.isArray(msg.experimental_attachments)
+          (msg as any).experimental_attachments &&
+          Array.isArray((msg as any).experimental_attachments)
         ) {
           const content: any[] = [];
 
@@ -252,7 +252,7 @@ const createVisionChatCompletion: LanguageModelV1 = {
           }
 
           // Add image attachments
-          for (const attachment of msg.experimental_attachments) {
+          for (const attachment of (msg as any).experimental_attachments) {
             if (attachment.contentType?.startsWith('image') && attachment.url) {
               content.push({
                 type: 'image_url',
