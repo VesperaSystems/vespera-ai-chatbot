@@ -34,10 +34,12 @@ export function ModelSelector({
   selectedModelId,
   chatId,
   className,
+  onModelChange,
 }: {
   session: Session;
   selectedModelId: string;
   chatId: string;
+  onModelChange?: (modelId: string) => void;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
@@ -128,6 +130,10 @@ export function ModelSelector({
         body: JSON.stringify({ model: modelId }),
       });
     });
+
+    if (onModelChange) {
+      onModelChange(modelId);
+    }
   };
 
   const getUpgradeMessage = (modelId: string) => {

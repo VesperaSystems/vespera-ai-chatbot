@@ -46,6 +46,9 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
+  // Add state for the selected model
+  const [selectedModelId, setSelectedModelId] = useState(initialChatModel);
+
   const { visibilityType } = useChatVisibility({
     chatId: id,
     initialVisibilityType,
@@ -72,7 +75,7 @@ export function Chat({
     experimental_prepareRequestBody: (body) => ({
       id,
       message: body.messages.at(-1),
-      selectedChatModel: initialChatModel,
+      selectedChatModel: selectedModelId,
       selectedVisibilityType: visibilityType,
     }),
     onFinish: () => {
@@ -157,10 +160,11 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-dvh bg-background">
         <ChatHeader
           chatId={id}
-          selectedModelId={initialChatModel}
+          selectedModelId={selectedModelId}
           selectedVisibilityType={initialVisibilityType}
           isReadonly={isReadonly}
           session={session}
+          onModelChange={setSelectedModelId}
         />
 
         <ReadOnlyBanner
@@ -196,6 +200,7 @@ export function Chat({
               setMessages={setMessages}
               append={append}
               selectedVisibilityType={visibilityType}
+              selectedModelId={selectedModelId}
             />
           )}
         </div>
@@ -217,6 +222,7 @@ export function Chat({
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
+        selectedModelId={selectedModelId}
       />
     </>
   );

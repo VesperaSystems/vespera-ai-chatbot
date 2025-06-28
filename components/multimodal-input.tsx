@@ -17,6 +17,7 @@ import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 import { checkUserMessageLimit } from '@/lib/db/queries';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
+import { modelSupportsVision } from '@/lib/ai/models';
 
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
 import { PreviewAttachment } from './preview-attachment';
@@ -44,6 +45,7 @@ function PureMultimodalInput({
   handleSubmit,
   className,
   selectedVisibilityType,
+  selectedModelId,
 }: {
   chatId: string;
   input: UseChatHelpers['input'];
@@ -58,6 +60,7 @@ function PureMultimodalInput({
   handleSubmit: UseChatHelpers['handleSubmit'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  selectedModelId: string;
 }) {
   const { data: session } = useSession();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -143,10 +146,25 @@ function PureMultimodalInput({
         }),
       );
 
-      handleSubmit(e);
+      // Include attachments in the submission
+      handleSubmit(undefined, {
+        experimental_attachments: attachments,
+      });
+
+      // Clear attachments after submission
+      setAttachments([]);
+      setLocalStorageInput('');
+      resetHeight();
+
+      if (width && width > 768) {
+        textareaRef.current?.focus();
+      }
     } catch (error) {
       console.error('Failed to check message limit:', error);
-      handleSubmit(e);
+      // Fallback submission with attachments
+      handleSubmit(undefined, {
+        experimental_attachments: attachments,
+      });
     }
   };
 
@@ -359,20 +377,22 @@ function PureMultimodalInput({
               )}
             </div>
           </div>
-          <div className="flex flex-row gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-10"
-              onClick={(event) => {
-                event.preventDefault();
-                fileInputRef.current?.click();
-              }}
-            >
-              <PaperclipIcon />
-            </Button>
-          </div>
+          {modelSupportsVision(selectedModelId) && (
+            <div className="flex flex-row gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-10"
+                onClick={(event) => {
+                  event.preventDefault();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <PaperclipIcon />
+              </Button>
+            </div>
+          )}
         </div>
       </form>
     </div>
@@ -387,6 +407,7 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
+    if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
 
     return true;
   },
