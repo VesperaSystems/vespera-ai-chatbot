@@ -1,5 +1,5 @@
 import {
-  appendClientMessage,
+
   appendResponseMessages,
   createDataStream,
   smoothStream,

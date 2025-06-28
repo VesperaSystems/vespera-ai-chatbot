@@ -1,6 +1,6 @@
 import type { Message } from 'ai';
-import { useSWRConfig } from 'swr';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
+
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
