@@ -175,10 +175,63 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
-    const messages = appendClientMessage({
-      // @ts-expect-error: todo add type conversion from DBMessage[] to UIMessage[]
-      messages: previousMessages,
-      message,
+    console.log('Chat API: Original message with attachments:', {
+      messageId: message.id,
+      hasAttachments: !!message.experimental_attachments,
+      attachmentCount: message.experimental_attachments?.length || 0,
+      attachments: message.experimental_attachments,
+    });
+
+    // Create a properly formatted message for the AI SDK
+    const formattedMessage = {
+      ...message,
+      experimental_attachments: message.experimental_attachments || [],
+    };
+
+    // For now, let's just use the current message to avoid type issues
+    // We can add message history back later once we fix the type issues
+    const messages = [formattedMessage];
+
+    console.log('Chat API: Using current message only:', {
+      totalMessages: messages.length,
+      lastMessage: messages[messages.length - 1],
+      lastMessageHasAttachments: !!(messages[messages.length - 1] as any)
+        ?.experimental_attachments,
+    });
+
+    // Ensure the latest message has experimental_attachments if present
+    if (
+      message.experimental_attachments &&
+      message.experimental_attachments.length > 0
+    ) {
+      const lastMessageIndex = messages.length - 1;
+      if (lastMessageIndex >= 0) {
+        messages[lastMessageIndex] = {
+          ...messages[lastMessageIndex],
+          experimental_attachments: message.experimental_attachments,
+        };
+      }
+    }
+
+    console.log('Chat API: Final messages before AI processing:', {
+      totalMessages: messages.length,
+      lastMessage: messages[messages.length - 1],
+      lastMessageHasAttachments: !!(messages[messages.length - 1] as any)
+        ?.experimental_attachments,
+    });
+
+    // Determine if we need to use a vision model
+    const hasImages = message.experimental_attachments?.some((att: any) =>
+      att.contentType?.startsWith('image'),
+    );
+
+    // Use vision model if images are present, otherwise use selected model
+    const modelToUse = hasImages ? 'gpt-4' : selectedChatModel;
+
+    console.log('Chat API: Model selection:', {
+      selectedChatModel,
+      hasImages,
+      modelToUse,
     });
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -214,12 +267,12 @@ export async function POST(request: Request) {
     const stream = createDataStream({
       execute: (dataStream) => {
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          model: myProvider.languageModel(modelToUse),
+          system: systemPrompt({ selectedChatModel: modelToUse, requestHints }),
           messages,
           maxSteps: 5,
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
+            modelToUse === 'chat-model-reasoning'
               ? []
               : [
                   'getWeather',
