@@ -1,5 +1,6 @@
 import type { Attachment } from 'ai';
 import { useState } from 'react';
+import Image from 'next/image';
 
 import { LoaderIcon } from './icons';
 
@@ -34,15 +35,15 @@ export const PreviewAttachment = ({
         <div className="w-32 h-24 aspect-video bg-muted rounded-md relative flex flex-col items-center justify-center">
           {contentType ? (
             contentType.startsWith('image') ? (
-              // NOTE: it is recommended to use next/image for images
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 key={url}
                 src={url}
                 alt={name ?? 'An image attachment'}
-                className="rounded-md size-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                fill
+                className="rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={handleImageClick}
                 onDoubleClick={handleImageDoubleClick}
+                unoptimized
               />
             ) : (
               <div className="" />
@@ -73,15 +74,18 @@ export const PreviewAttachment = ({
           onClick={() => setIsImageModalOpen(false)}
         >
           <div className="relative max-w-full max-h-full">
-            <img
+            <Image
               src={url}
               alt={name ?? 'Full size image'}
+              width={800}
+              height={600}
               className="max-w-full max-h-full object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
+              unoptimized
             />
             <button
               type="button"
-              className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/70 transition-colors"
+              className="absolute top-2 right-2 bg-black/50 text-white rounded-full size-8 flex items-center justify-center hover:bg-black/70 transition-colors"
               onClick={() => setIsImageModalOpen(false)}
             >
               ×

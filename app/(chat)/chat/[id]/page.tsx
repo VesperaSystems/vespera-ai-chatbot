@@ -12,17 +12,24 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
 
+  // Validate UUID format before processing
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    console.error('Invalid UUID format:', id);
+    redirect('/');
+  }
+
   try {
-    const chat = await getChatById({ id });
-
-    if (!chat) {
-      redirect('/');
-    }
-
     const session = await auth();
 
     if (!session) {
       redirect('/api/auth/guest');
+    }
+
+    const chat = await getChatById({ id });
+
+    if (!chat) {
+      redirect('/');
     }
 
     if (chat.visibility === 'private') {
