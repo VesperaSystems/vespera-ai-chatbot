@@ -26,6 +26,8 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
+import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
+import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { getEntitlements } from '@/lib/ai/entitlements';
@@ -157,10 +159,59 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
+    // Filter out document attachments that OpenAI doesn't support
+    const documentAttachments =
+      message.experimental_attachments?.filter(
+        (attachment) =>
+          attachment.contentType ===
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          attachment.contentType === 'application/msword' ||
+          attachment.contentType === 'application/pdf' ||
+          attachment.contentType === 'text/plain',
+      ) || [];
+
+    const imageAttachments =
+      message.experimental_attachments?.filter(
+        (attachment) =>
+          attachment.contentType === 'image/jpeg' ||
+          attachment.contentType === 'image/png' ||
+          attachment.contentType === 'image/webp',
+      ) || [];
+
+    // Create a modified message without document attachments for the AI
+    let messageForAI = {
+      ...message,
+      experimental_attachments: imageAttachments, // Only send images to AI
+    };
+
+    // If there are document attachments, we'll add the extracted text to the message
+    if (documentAttachments.length > 0) {
+      const documentTexts = [];
+      for (const attachment of documentAttachments) {
+        documentTexts.push(
+          `[Document: ${attachment.name}]\nURL: ${attachment.url}\nType: ${attachment.contentType}\nThis document has been uploaded and is ready for analysis.`,
+        );
+      }
+
+      // Add the document information to the message content
+      const documentInfo = `\n\n--- Uploaded Documents ---\n${documentTexts.join('\n\n')}\n\nPlease use the extractDocumentText tool to analyze these documents.`;
+
+      messageForAI = {
+        ...messageForAI,
+        parts: [
+          ...messageForAI.parts,
+          {
+            type: 'text',
+            text: documentInfo,
+          },
+        ],
+      };
+    }
+
     const messages = appendClientMessage({
       // @ts-expect-error: todo add type conversion from DBMessage[] to UIMessage[]
       messages: previousMessages,
-      message,
+      message: messageForAI,
     });
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -194,7 +245,7 @@ export async function POST(request: Request) {
     await createStreamId({ streamId, chatId: id });
 
     const stream = createDataStream({
-      execute: (dataStream) => {
+      execute: async (dataStream: DataStreamWriter) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
@@ -209,6 +260,7 @@ export async function POST(request: Request) {
                   'updateDocument',
                   'requestSuggestions',
                   'createChart',
+                  'extractDocumentText',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -221,6 +273,7 @@ export async function POST(request: Request) {
               dataStream,
             }),
             createChart: createChart({ session, dataStream }),
+            extractDocumentText: extractDocumentText({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
@@ -270,7 +323,8 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
+      onError: (error) => {
+        console.error('Stream error:', error);
         return 'Oops, an error occurred!';
       },
     });
@@ -281,6 +335,10 @@ export async function POST(request: Request) {
     return new Response(stream);
   } catch (error) {
     console.error('Chat API Error:', error);
+    console.error(
+      'Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace',
+    );
     return new Response(
       `Error in chat processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
       {

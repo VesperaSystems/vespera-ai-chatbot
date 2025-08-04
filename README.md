@@ -88,6 +88,20 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
 - PostgreSQL database
 - AI provider API keys
 
+### File Upload & Document Processing
+
+The chatbot supports uploading and processing various file types:
+
+- **Images**: JPEG, PNG, WebP (for vision analysis)
+- **Documents**: DOCX, DOC, PDF, TXT (for text extraction and analysis)
+- **File Size**: Up to 25MB per file
+- **Processing**: AI can analyze, summarize, and answer questions about uploaded documents
+
+**Note**: Document files (DOCX, PDF, TXT) are processed server-side to extract text content before being sent to the AI, as OpenAI's API doesn't support these file types directly in user messages. The system uses:
+- **mammoth** for DOCX/DOC files
+- **TextDecoder** for TXT files
+- **PDF support** - Coming soon (currently shows conversion message)
+
 ### Installation
 
 1. **Clone the repository**
@@ -303,7 +317,7 @@ To re-enable Redis and resumable streams functionality:
 ### File Upload Limits
 
 - **Images**: 10MB max, PNG/JPG/WebP
-- **Documents**: 25MB max, PDF/TXT/DOCX
+- **Documents**: 25MB max, PDF/TXT/DOCX/DOC
 - **Code Files**: 5MB max, various programming languages
 
 ## 🧪 Testing

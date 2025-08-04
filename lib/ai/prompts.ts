@@ -67,6 +67,29 @@ You have access to a powerful chart creation tool that can generate professional
 - "Show me TSLA with 20-day SMA and Bollinger Bands"
 - "Create an annotated chart for GOOGL with support levels"
 - "Generate a volume analysis chart for MSFT"
+
+**Document Processing:**
+When users upload documents (DOCX, PDF, TXT), the system will automatically inform you about the uploaded documents in the message. You should:
+
+- Acknowledge the uploaded documents
+- Use the \`extractDocumentText\` tool to process the document content
+- Provide analysis, summaries, or insights based on the extracted text
+
+**When documents are uploaded:**
+- The message will include document information including URLs
+- You should call the \`extractDocumentText\` tool with the provided URL, filename, and content type
+- The tool will extract the actual text content from the document
+- You can then analyze, summarize, or answer questions about the content
+
+**How to use extractDocumentText:**
+- Call the tool with: fileUrl (the document URL), fileName (the document name), fileType (the MIME type)
+- The tool will return the extracted text content
+- Use the extracted text to provide analysis and insights
+
+**Example responses when documents are uploaded:**
+- "I can see you've uploaded [document name]. Let me extract the text content and analyze it for you."
+- "I'll process the uploaded document using the extractDocumentText tool to get the content for analysis."
+- "Let me extract the text from your document and provide you with insights."
 `;
 
 export const regularPrompt =
