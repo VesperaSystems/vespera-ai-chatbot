@@ -87,6 +87,10 @@ export const createChart = ({
 
         const volumePy = volume ? 'True' : 'False';
         const titleValue = title || `${symbol} Stock Price Chart`;
+        const chartTypeValue = chartType;
+        const styleValue = style;
+        const savePathValue = savePath;
+
         // Create a simple Python script template
         const pythonScript = `import yfinance as yf
 import mplfinance as mpf
@@ -193,11 +197,11 @@ def create_financial_chart(symbol, period='1y', interval='1d', chart_type='candl
 symbol = '${symbol}'
 period = '${period}'
 interval = '${interval}'
-chart_type = '${chartType}'
+chart_type = '${chartTypeValue}'
 volume = ${volumePy}
-style = '${style}'
+style = '${styleValue}'
 title = '${titleValue}'
-save_path = '${savePath}'
+save_path = '${savePathValue}'
 
 # Create the chart
 create_financial_chart(
@@ -214,6 +218,7 @@ create_financial_chart(
 
         // Create the document content
         const titleText = title || `${symbol} Stock Price Chart`;
+        const volumeText = volume ? 'Enabled' : 'Disabled';
         const documentContent = `# Financial Chart Generator for ${symbol}
 
 This Python script creates a professional financial chart using mplfinance and yfinance.
@@ -222,9 +227,9 @@ This Python script creates a professional financial chart using mplfinance and y
 - **Symbol**: ${symbol}
 - **Period**: ${period}
 - **Interval**: ${interval}
-- **Chart Type**: ${chartType}
-- **Volume**: ${volume ? 'Enabled' : 'Disabled'}
-- **Style**: ${style}
+- **Chart Type**: ${chartTypeValue}
+- **Volume**: ${volumeText}
+- **Style**: ${styleValue}
 - **Title**: ${titleText}
 
 ## Python Script
@@ -246,7 +251,7 @@ Install dependencies:
 pip install mplfinance yfinance pandas matplotlib
 \`\`\`
 
-The script will generate a chart image saved as '${savePath}'.
+The script will generate a chart image saved as '${savePathValue}'.
 `;
 
         // Immediately return a document artifact with the script and chart details
