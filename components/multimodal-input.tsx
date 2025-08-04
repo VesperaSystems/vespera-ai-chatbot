@@ -364,7 +364,7 @@ function PureMultimodalInput({
               >
                 <ArrowUpIcon />
               </Button>
-              {status === 'streaming' && (
+              {status === 'streaming' ? (
                 <Button
                   type="button"
                   size="icon"
@@ -374,25 +374,24 @@ function PureMultimodalInput({
                 >
                   <StopIcon />
                 </Button>
+              ) : (
+                modelSupportsVision(selectedModelId) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-10"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <PaperclipIcon />
+                  </Button>
+                )
               )}
             </div>
           </div>
-          {modelSupportsVision(selectedModelId) && (
-            <div className="flex flex-row gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="size-10"
-                onClick={(event) => {
-                  event.preventDefault();
-                  fileInputRef.current?.click();
-                }}
-              >
-                <PaperclipIcon />
-              </Button>
-            </div>
-          )}
         </div>
       </form>
     </div>
@@ -412,83 +411,3 @@ export const MultimodalInput = memo(
     return true;
   },
 );
-
-function PureAttachmentsButton({
-  fileInputRef,
-  status,
-}: {
-  fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  status: UseChatHelpers['status'];
-}) {
-  return (
-    <Button
-      data-testid="attachments-button"
-      className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
-      onClick={(event) => {
-        event.preventDefault();
-        fileInputRef.current?.click();
-      }}
-      disabled={status !== 'ready'}
-      variant="ghost"
-    >
-      <PaperclipIcon size={14} />
-    </Button>
-  );
-}
-
-const AttachmentsButton = memo(PureAttachmentsButton);
-
-function PureStopButton({
-  stop,
-  setMessages,
-}: {
-  stop: () => void;
-  setMessages: UseChatHelpers['setMessages'];
-}) {
-  return (
-    <Button
-      data-testid="stop-button"
-      className="rounded-full p-1.5 h-fit border dark:border-zinc-600"
-      onClick={(event) => {
-        event.preventDefault();
-        stop();
-        setMessages((messages) => messages);
-      }}
-    >
-      <StopIcon size={14} />
-    </Button>
-  );
-}
-
-const StopButton = memo(PureStopButton);
-
-function PureSendButton({
-  submitForm,
-  input,
-  uploadQueue,
-}: {
-  submitForm: () => void;
-  input: string;
-  uploadQueue: Array<string>;
-}) {
-  return (
-    <Button
-      data-testid="send-button"
-      className="rounded-full p-1.5 h-fit border dark:border-zinc-600"
-      onClick={(event) => {
-        event.preventDefault();
-        submitForm();
-      }}
-      disabled={input.length === 0 || uploadQueue.length > 0}
-    >
-      <ArrowUpIcon size={14} />
-    </Button>
-  );
-}
-
-const SendButton = memo(PureSendButton, (prevProps, nextProps) => {
-  if (prevProps.uploadQueue.length !== nextProps.uploadQueue.length)
-    return false;
-  if (prevProps.input !== nextProps.input) return false;
-  return true;
-});

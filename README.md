@@ -1,64 +1,317 @@
-<a href="https://chat.vercel.ai/">
-  <img alt="Next.js 14 and App Router-ready AI chatbot." src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chat SDK</h1>
-</a>
+# Vespera AI Chatbot
 
-<p align="center">
+A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced chat capabilities, document processing, chart generation, and multimodal interactions.
 
-    Commit to Preview SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+## 🚀 Features
 
-</p>
+### Core Functionality
 
-<p align="center">
-  <a href="https://chat-sdk.dev"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
-</p>
-<br/>
+- **AI Chat Interface**: Real-time chat with multiple AI models (xAI Grok, OpenAI, Claude)
+- **Document Processing**: Upload and analyze PDFs, images, and text documents
+- **Chart Generation**: Create professional financial charts with real-time stock data
+- **Code Execution**: Run and edit code with syntax highlighting and error handling
+- **Multimodal Input**: Support for text, images, and file uploads
+- **Artifact System**: Generate and manage various content types (documents, images, code)
 
-## Features
+### Technical Features
 
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://sdk.vercel.ai/docs)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports xAI (default), OpenAI, Fireworks, and other model providers
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+- **Next.js 15**: App Router with React Server Components
+- **TypeScript**: Strict type checking and type safety
+- **Database**: PostgreSQL with Drizzle ORM for data persistence
+- **Authentication**: NextAuth.js with multiple providers
+- **File Storage**: Vercel Blob for efficient file handling
+- **Real-time Updates**: Streaming responses and live data
+- **Responsive Design**: Mobile-first UI with Tailwind CSS
 
-## Model Providers
+## 🛠️ Tech Stack
 
-This template ships with [xAI](https://x.ai) `grok-2-1212` as the default chat model. However, with the [AI SDK](https://sdk.vercel.ai/docs), you can switch LLM providers to [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://sdk.vercel.ai/providers/ai-sdk-providers) with just a few lines of code.
+### Frontend
 
-## Deploy Your Own
+- **Next.js 15.3.2**: React framework with App Router
+- **React 19**: Latest React with concurrent features
+- **TypeScript 5.8.2**: Type-safe development
+- **Tailwind CSS**: Utility-first CSS framework
+- **Radix UI**: Accessible component primitives
+- **Framer Motion**: Smooth animations and transitions
 
-You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
+### Backend & AI
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fai-chatbot&env=AUTH_SECRET&envDescription=Generate%20a%20random%20secret%20to%20use%20for%20authentication&envLink=https%3A%2F%2Fgenerate-secret.vercel.app%2F32&project-name=my-awesome-chatbot&repository-name=my-awesome-chatbot&demo-title=AI%20Chatbot&demo-description=An%20Open-Source%20AI%20Chatbot%20Template%20Built%20With%20Next.js%20and%20the%20AI%20SDK%20by%20Vercel&demo-url=https%3A%2F%2Fchat.vercel.ai&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22ai%22%2C%22productSlug%22%3A%22grok%22%2C%22integrationSlug%22%3A%22xai%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22blob%22%7D%5D)
+- **AI SDK**: Unified API for multiple AI providers
+- **xAI Grok**: Primary AI model for chat interactions
+- **OpenAI**: Alternative AI provider support
+- **Vercel Functions**: Serverless API endpoints
+- **Drizzle ORM**: Type-safe database operations
+- **PostgreSQL**: Primary database (Vercel Postgres)
+- **Redis**: Resumable streams and session management
 
-## Running locally
+### Development Tools
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+- **Biome**: Fast linter and formatter
+- **ESLint**: Code quality and style enforcement
+- **Playwright**: End-to-end testing
+- **pnpm**: Fast package manager
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+## 📦 Dependencies
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+### Core Dependencies
 
-```bash
-pnpm install
-pnpm dev
+```json
+{
+  "@ai-sdk/openai": "^1.3.22",
+  "@ai-sdk/react": "^1.2.11",
+  "@ai-sdk/xai": "^1.2.15",
+  "ai": "4.3.13",
+  "next": "15.3.2",
+  "react": "19.0.0-rc-45804af1-20241021",
+  "drizzle-orm": "^0.34.0",
+  "@vercel/postgres": "^0.10.0",
+  "@vercel/blob": "^0.24.1",
+  "redis": "^5.0.0"
+}
 ```
 
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+### Key Features
+
+- **CodeMirror**: Advanced code editing with syntax highlighting
+- **Prosemirror**: Rich text editing capabilities
+- **React Data Grid**: Tabular data display
+- **SWR**: Data fetching and caching
+- **Sonner**: Toast notifications
+- **Lucide React**: Icon library
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- pnpm package manager
+- PostgreSQL database
+- AI provider API keys
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd vespera-ai-chatbot
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Environment Setup**
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Configure your environment variables:
+
+   ```env
+   # Database
+   POSTGRES_URL=your_postgres_connection_string
+
+   # Redis (for resumable streams)
+   REDIS_URL=your_redis_connection_string
+
+   # AI Providers
+   XAI_API_KEY=your_xai_api_key
+   OPENAI_API_KEY=your_openai_api_key
+
+   # Authentication
+   AUTH_SECRET=your_auth_secret
+   NEXTAUTH_URL=http://localhost:3000
+
+   # File Storage
+   BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+   ```
+
+4. **Database Setup**
+
+   ```bash
+   pnpm run db:generate
+   pnpm run db:migrate
+   ```
+
+5. **Start Development Server**
+   ```bash
+   pnpm run dev
+   ```
+
+## 🏗️ Development
+
+### Available Scripts
+
+```bash
+# Development
+pnpm run dev          # Start development server
+pnpm run build        # Production build
+pnpm run start        # Start production server
+
+# Code Quality
+pnpm run lint         # Run ESLint + Biome
+pnpm run lint:fix     # Auto-fix linting issues
+pnpm run format       # Format code with Biome
+
+# Database
+pnpm run db:generate  # Generate migrations
+pnpm run db:migrate   # Run migrations
+pnpm run db:studio    # Open Drizzle Studio
+pnpm run db:push      # Push schema changes
+
+# Testing
+pnpm run test         # Run Playwright tests
+```
+
+### Code Quality Standards
+
+- **TypeScript**: Strict mode enabled, no `any` types
+- **Linting**: ESLint + Biome for consistent code style
+- **Formatting**: Automatic formatting on save
+- **Testing**: Playwright for E2E testing
+
+## 🌐 Deployment
+
+### Vercel Deployment (Recommended)
+
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
+
+### Environment Variables for Production
+
+```env
+# Required
+POSTGRES_URL=your_production_postgres_url
+REDIS_URL=your_production_redis_url
+AUTH_SECRET=your_production_auth_secret
+NEXTAUTH_URL=https://your-domain.com
+
+# AI Providers (at least one required)
+XAI_API_KEY=your_xai_api_key
+OPENAI_API_KEY=your_openai_api_key
+
+# File Storage
+BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
+
+# Optional
+NEXTAUTH_SECRET=your_nextauth_secret
+```
+
+## 📊 Database Schema
+
+### Core Tables
+
+- **users**: User accounts and authentication
+- **chats**: Chat sessions and metadata
+- **messages**: Individual chat messages
+- **artifacts**: Generated content (documents, images, code)
+- **subscription_types**: User subscription plans
+- **user_message_counts**: Usage tracking
+
+### Key Features
+
+- **Type-safe**: Full TypeScript integration with Drizzle
+- **Migrations**: Automated schema versioning
+- **Relationships**: Proper foreign key constraints
+- **Indexing**: Optimized for query performance
+
+## 🔧 Configuration
+
+### AI Model Configuration
+
+The app supports multiple AI providers:
+
+- **xAI Grok**: Default model for chat interactions
+- **OpenAI GPT-4**: Alternative for complex reasoning
+- **Claude**: Anthropic's model for specific tasks
+
+### Redis Configuration
+
+- **Resumable Streams**: Enables chat sessions to continue from where they left off if interrupted
+- **Stream Context**: Uses Redis for session persistence and recovery
+- **Graceful Fallback**: App continues without resumable streams if Redis is unavailable
+- **Local Development**: Redis is disabled locally to avoid connection issues
+- **Production**: Uses Vercel KV (Redis-compatible) for resumable streams
+
+### File Upload Limits
+
+- **Images**: 10MB max, PNG/JPG/WebP
+- **Documents**: 25MB max, PDF/TXT/DOCX
+- **Code Files**: 5MB max, various programming languages
+
+## 🧪 Testing
+
+### Test Structure
+
+```
+tests/
+├── e2e/           # End-to-end tests
+│   ├── chat.test.ts
+│   ├── artifacts.test.ts
+│   └── session.test.ts
+├── pages/         # Page-specific tests
+└── routes/        # API route tests
+```
+
+### Running Tests
+
+```bash
+pnpm run test              # Run all tests
+pnpm run test:headed      # Run with browser UI
+pnpm run test:debug       # Run with debugging
+```
+
+## 📈 Performance
+
+### Optimizations
+
+- **Server Components**: Reduced client-side JavaScript
+- **Streaming**: Real-time response streaming
+- **Image Optimization**: Next.js Image component
+- **Code Splitting**: Automatic route-based splitting
+- **Caching**: SWR for data fetching optimization
+
+### Monitoring
+
+- **Vercel Analytics**: Built-in performance monitoring
+- **Error Tracking**: Automatic error reporting
+- **Database Monitoring**: Query performance tracking
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run quality checks: `pnpm run lint && pnpm run test`
+5. Submit a pull request
+
+### Code Standards
+
+- Follow TypeScript strict mode
+- Use proper error handling
+- Write comprehensive tests
+- Document new features
+- Follow existing code style
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+
+- Check the [Developer Checklist](DEVELOPER_CHECKLIST.md)
+- Review existing issues on GitHub
+- Create a new issue with detailed information
+
+---
+
+**Built with ❤️ using Next.js, TypeScript, and modern web technologies**

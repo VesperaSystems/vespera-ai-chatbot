@@ -25,6 +25,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { createChart } from '@/lib/ai/tools/create-chart';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { getEntitlements } from '@/lib/ai/entitlements';
@@ -225,6 +226,7 @@ export async function POST(request: Request) {
                   'createDocument',
                   'updateDocument',
                   'requestSuggestions',
+                  'createChart',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -236,6 +238,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            createChart: createChart({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {

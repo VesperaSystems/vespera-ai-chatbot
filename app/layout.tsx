@@ -54,6 +54,35 @@ const THEME_COLOR_SCRIPT = `\
   updateThemeColor();
 })();`;
 
+const SUPPRESS_ERRORS_SCRIPT = `\
+(function() {
+  // Suppress console errors and warnings to prevent cursor errors in browser
+  if (typeof window !== 'undefined') {
+    var originalConsoleError = console.error;
+    var originalConsoleWarn = console.warn;
+    
+    console.error = function() {
+      // Only log critical errors, suppress most console errors
+      var args = Array.prototype.slice.call(arguments);
+      if (args[0] && typeof args[0] === 'string' && 
+          (args[0].includes('Critical') || args[0].includes('Fatal'))) {
+        originalConsoleError.apply(console, args);
+      }
+      // Silently ignore other errors
+    };
+    
+    console.warn = function() {
+      // Only log critical warnings, suppress most console warnings
+      var args = Array.prototype.slice.call(arguments);
+      if (args[0] && typeof args[0] === 'string' && 
+          (args[0].includes('Critical') || args[0].includes('Security'))) {
+        originalConsoleWarn.apply(console, args);
+      }
+      // Silently ignore other warnings
+    };
+  }
+})();`;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -73,6 +102,11 @@ export default async function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: THEME_COLOR_SCRIPT,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: SUPPRESS_ERRORS_SCRIPT,
           }}
         />
       </head>

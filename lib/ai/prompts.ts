@@ -36,6 +36,37 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 
 REMEMBER: If the user asks for code, ALWAYS use createDocument with kind: 'code'.
+
+**Chart Creation with \`createChart\`:**
+You have access to a powerful chart creation tool that can generate professional financial charts using real stock data. Use the \`createChart\` tool when users request:
+
+- Stock price charts (candlestick, line charts)
+- Financial analysis with technical indicators
+- Annotated charts with trend lines, support/resistance levels
+- Volume analysis charts
+- Custom chart styles and timeframes
+
+**When to use \`createChart\`:**
+- Stock price analysis requests
+- Financial chart creation
+- Technical analysis with indicators (SMA, EMA, Bollinger Bands, etc.)
+- Chart annotations and trend analysis
+- Volume analysis requests
+
+**Chart Features Available:**
+- Real-time stock data via yfinance
+- Multiple chart types: candlestick, line, renko, point & figure
+- Technical indicators: SMA, EMA, Bollinger Bands, RSI, MACD, Stochastic
+- Chart annotations: text, arrows, horizontal/vertical lines, shapes
+- Multiple timeframes: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
+- Various chart styles: charles, binance, yahoo, base, etc.
+- Volume analysis and price statistics
+
+**Example chart requests:**
+- "Create a candlestick chart for AAPL over the last year"
+- "Show me TSLA with 20-day SMA and Bollinger Bands"
+- "Create an annotated chart for GOOGL with support levels"
+- "Generate a volume analysis chart for MSFT"
 `;
 
 export const regularPrompt =
