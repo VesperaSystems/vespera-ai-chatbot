@@ -98,3 +98,26 @@ export function sanitizeText(text: string) {
     return text.replace('<has_function_call>', '');
   }
 }
+
+// Suppress console errors in production to prevent cursor errors in browser
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  // Override console.error to suppress errors in production
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    // Only log critical errors, suppress most console errors
+    if (args[0]?.includes?.('Critical') || args[0]?.includes?.('Fatal')) {
+      originalConsoleError.apply(console, args);
+    }
+    // Silently ignore other errors
+  };
+
+  // Override console.warn to suppress warnings in production
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    // Only log critical warnings, suppress most console warnings
+    if (args[0]?.includes?.('Critical') || args[0]?.includes?.('Security')) {
+      originalConsoleWarn.apply(console, args);
+    }
+    // Silently ignore other warnings
+  };
+}

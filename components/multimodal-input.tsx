@@ -364,7 +364,7 @@ function PureMultimodalInput({
               >
                 <ArrowUpIcon />
               </Button>
-              {status === 'streaming' && (
+              {status === 'streaming' ? (
                 <Button
                   type="button"
                   size="icon"
@@ -374,25 +374,24 @@ function PureMultimodalInput({
                 >
                   <StopIcon />
                 </Button>
+              ) : (
+                modelSupportsVision(selectedModelId) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="size-10"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <PaperclipIcon />
+                  </Button>
+                )
               )}
             </div>
           </div>
-          {modelSupportsVision(selectedModelId) && (
-            <div className="flex flex-row gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="size-10"
-                onClick={(event) => {
-                  event.preventDefault();
-                  fileInputRef.current?.click();
-                }}
-              >
-                <PaperclipIcon />
-              </Button>
-            </div>
-          )}
         </div>
       </form>
     </div>
