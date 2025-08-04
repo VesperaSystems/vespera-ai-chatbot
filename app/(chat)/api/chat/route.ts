@@ -6,7 +6,8 @@ import {
   streamText,
 } from 'ai';
 import { auth } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import type { RequestHints } from '@/lib/ai/prompts';
+import { getTenantSystemPrompt } from '@/lib/ai/tenant-prompts';
 import {
   createStreamId,
   deleteChatById,
@@ -26,7 +27,7 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
-import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
+import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
 import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -248,7 +249,11 @@ export async function POST(request: Request) {
       execute: async (dataStream: DataStreamWriter) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: getTenantSystemPrompt({
+            tenantType: session.user.tenantType || 'quant',
+            selectedChatModel,
+            requestHints,
+          }),
           messages,
           maxSteps: 5,
           experimental_activeTools:
@@ -260,7 +265,7 @@ export async function POST(request: Request) {
                   'updateDocument',
                   'requestSuggestions',
                   'createChart',
-                  'extractDocumentText',
+                  'analyzeDocument',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -273,7 +278,7 @@ export async function POST(request: Request) {
               dataStream,
             }),
             createChart: createChart({ session, dataStream }),
-            extractDocumentText: extractDocumentText({ session, dataStream }),
+            analyzeDocument: analyzeDocument({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {

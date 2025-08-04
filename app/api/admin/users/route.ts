@@ -4,6 +4,23 @@ import { user } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
+export async function GET() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.isAdmin) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const users = await db.select().from(user);
+
+    return NextResponse.json({ users });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
     const session = await auth();
@@ -13,7 +30,14 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { userId, isAdmin, subscriptionType } = body;
+    const {
+      userId,
+      isAdmin,
+      subscriptionType,
+      organizationName,
+      tenantType,
+      organizationDomain,
+    } = body;
 
     if (!userId) {
       return new NextResponse('User ID is required', { status: 400 });
@@ -28,6 +52,15 @@ export async function PATCH(request: Request) {
     }
     if (typeof subscriptionType === 'number') {
       updateData.subscriptionType = subscriptionType;
+    }
+    if (organizationName !== undefined) {
+      updateData.organizationName = organizationName || null;
+    }
+    if (tenantType !== undefined) {
+      updateData.tenantType = tenantType || 'quant';
+    }
+    if (organizationDomain !== undefined) {
+      updateData.organizationDomain = organizationDomain || null;
     }
 
     // Log the update data for debugging

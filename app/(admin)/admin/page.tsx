@@ -68,6 +68,23 @@ export default async function AdminDashboardPage() {
               </Link>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users size={20} />
+                Tenant Management
+              </CardTitle>
+              <CardDescription>
+                Manage tenant types, organizations, and user assignments
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/tenants">
+                <Button className="w-full">Manage Tenants</Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

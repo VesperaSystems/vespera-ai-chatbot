@@ -7,8 +7,9 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
 ### Core Functionality
 
 - **AI Chat Interface**: Real-time chat with multiple AI models (xAI Grok, OpenAI, Claude)
+- **Tenant-Specific AI**: Customized prompts for finance and legal professionals
 - **Document Processing**: Upload and analyze PDFs, images, and text documents
-- **Chart Generation**: Create professional financial charts with real-time stock data
+- **Chart Generation**: Create professional financial charts with real-time stock data (finance tenants)
 - **Code Execution**: Run and edit code with syntax highlighting and error handling
 - **Multimodal Input**: Support for text, images, and file uploads
 - **Artifact System**: Generate and manage various content types (documents, images, code)
@@ -101,6 +102,32 @@ The chatbot supports uploading and processing various file types:
 - **mammoth** for DOCX/DOC files
 - **TextDecoder** for TXT files
 - **PDF support** - Coming soon (currently shows conversion message)
+
+### Tenant Management
+
+The application supports multi-tenant architecture with specialized AI prompts for different professional domains:
+
+- **Quant Tenants**: Specialized prompts for quantitative analysts, portfolio managers, and financial professionals
+  - Financial modeling and analysis
+  - Investment strategy development
+  - Risk management and portfolio optimization
+  - Chart creation with technical indicators
+  - Market analysis and data interpretation
+
+- **Legal Tenants**: Specialized prompts for attorneys, paralegals, and legal professionals
+  - Legal research and case law analysis
+  - Contract review and drafting
+  - Regulatory compliance and risk assessment
+  - Intellectual property and patent analysis
+  - Litigation support and discovery
+
+**Auto-Detection**: Users with 'legal' in their username are automatically assigned to legal tenant type.
+
+**Organizations**: 
+- **x4group**: Legal organization with legal tenant type
+- **Default**: Quant tenant type for financial professionals
+
+**Admin Interface**: Administrators can manage tenant types and organization information through the admin panel at `/admin/tenants`.
 
 ### Installation
 

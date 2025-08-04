@@ -3,25 +3,32 @@ import { tool } from 'ai';
 import { generateUUID } from '@/lib/utils';
 import mammoth from 'mammoth';
 
-const extractDocumentTextSchema = z.object({
+const analyzeDocumentSchema = z.object({
   fileUrl: z.string().describe('URL of the uploaded document file'),
   fileName: z.string().describe('Name of the uploaded file'),
   fileType: z.string().describe('MIME type of the uploaded file'),
+  analysisType: z
+    .enum(['legal', 'finance', 'general'])
+    .optional()
+    .describe('Type of analysis to perform'),
 });
 
-export const extractDocumentText = ({
+export const analyzeDocument = ({
   session,
   dataStream,
 }: { session: any; dataStream: any }) => {
   return tool({
     description:
-      'Extract text content from uploaded documents (DOCX, PDF, TXT) and provide the extracted text for AI analysis.',
-    parameters: extractDocumentTextSchema,
-    execute: async (params: z.infer<typeof extractDocumentTextSchema>) => {
+      'Analyze uploaded documents (DOCX, PDF, TXT) and provide structured feedback with issues, recommendations, and corrections.',
+    parameters: analyzeDocumentSchema,
+    execute: async (params: z.infer<typeof analyzeDocumentSchema>) => {
       try {
-        const { fileUrl, fileName, fileType } = params;
-        
-
+        const {
+          fileUrl,
+          fileName,
+          fileType,
+          analysisType = 'general',
+        } = params;
 
         let extractedText = '';
 
@@ -41,10 +48,8 @@ export const extractDocumentText = ({
           fileName.toLowerCase().endsWith('.docx') ||
           fileName.toLowerCase().endsWith('.doc')
         ) {
-          // Extract text from DOCX/DOC files
           const result = await mammoth.extractRawText({ buffer });
           extractedText = result.value;
-
           if (result.messages.length > 0) {
             console.log('Mammoth warnings:', result.messages);
           }
@@ -52,13 +57,11 @@ export const extractDocumentText = ({
           fileType === 'application/pdf' ||
           fileName.toLowerCase().endsWith('.pdf')
         ) {
-          // PDF parsing is not yet implemented
-          extractedText = `PDF file "${fileName}" detected. PDF text extraction is not yet implemented. Please convert to DOCX or TXT format for text extraction.`;
+          extractedText = `PDF file "${fileName}" detected. PDF text extraction is not yet implemented. Please convert to DOCX or TXT format for analysis.`;
         } else if (
           fileType === 'text/plain' ||
           fileName.toLowerCase().endsWith('.txt')
         ) {
-          // Extract text from TXT files
           extractedText = new TextDecoder().decode(buffer);
         } else {
           throw new Error(`Unsupported file type: ${fileType}`);
@@ -76,7 +79,29 @@ export const extractDocumentText = ({
             'No text content could be extracted from this document.';
         }
 
-        // Create a document artifact with the extracted text
+        // Create analysis result based on document type and analysis type
+        const documentName = fileName.replace(/\.[^/.]+$/, ''); // Remove file extension
+
+        const analysisResult = {
+          document: documentName,
+          analysisType: analysisType,
+          originalFileUrl: fileUrl,
+          originalFileName: fileName,
+          issues: [],
+          recommendations: [],
+          summary: `Analysis of ${documentName} completed.`,
+          metadata: {
+            charactersAnalyzed: extractedText.length,
+            analysisTimestamp: new Date().toISOString(),
+            fileType: fileType,
+          },
+        };
+
+        // For now, return a template structure
+        // The AI will populate this with actual analysis
+        const analysisJson = JSON.stringify(analysisResult, null, 2);
+
+        // Create a text artifact with the analysis JSON
         dataStream.writeData({
           type: 'kind',
           content: 'text',
@@ -89,7 +114,7 @@ export const extractDocumentText = ({
 
         dataStream.writeData({
           type: 'title',
-          content: `Document Text: ${fileName}`,
+          content: `Document Analysis: ${documentName}`,
         });
 
         dataStream.writeData({
@@ -99,32 +124,20 @@ export const extractDocumentText = ({
 
         dataStream.writeData({
           type: 'text',
-          content: extractedText,
+          content: `# Document Analysis: ${documentName}\n\n## Document Content\n\n\`\`\`\n${extractedText.substring(0, 1000)}${extractedText.length > 1000 ? '\n\n... (truncated for display)' : ''}\n\`\`\`\n\n*Document processed. Provide analysis in natural language.*`,
         });
 
         dataStream.writeData({ type: 'finish', content: '' });
 
+        // Return nothing visible to avoid showing any response in chat
         return {
           success: true,
-          message: `Successfully extracted ${extractedText.length} characters from ${fileName}`,
-          document: {
-            content: extractedText,
-            language: 'markdown',
-            filename: `${fileName}_extracted_text.md`,
-          },
-          details: {
-            fileName,
-            fileType,
-            fileUrl,
-            extractionStatus: 'completed',
-            charactersExtracted: extractedText.length,
-            note: 'Text extraction completed successfully.',
-          },
+          message: `Document processed successfully`,
         };
       } catch (error) {
-        console.error('Error in extractDocumentText tool:', error);
+        console.error('Error in analyzeDocument tool:', error);
         return {
-          error: 'Failed to extract document text',
+          error: 'Failed to analyze document',
           message:
             error instanceof Error ? error.message : 'Unknown error occurred',
         };

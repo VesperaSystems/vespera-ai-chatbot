@@ -50,6 +50,9 @@ export const {
           email: user.email,
           subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
+          organizationName: user.organizationName,
+          tenantType: user.tenantType || 'quant',
+          organizationDomain: user.organizationDomain,
         };
       },
     }),
@@ -62,6 +65,9 @@ export const {
         token.email = user.email;
         token.subscriptionType = Number(user.subscriptionType);
         token.isAdmin = user.isAdmin;
+        token.organizationName = user.organizationName;
+        token.tenantType = user.tenantType || 'quant';
+        token.organizationDomain = user.organizationDomain;
       }
       return token;
     },
@@ -71,6 +77,9 @@ export const {
         session.user.email = token.email;
         session.user.subscriptionType = Number(token.subscriptionType);
         session.user.isAdmin = token.isAdmin;
+        session.user.organizationName = token.organizationName;
+        session.user.tenantType = token.tenantType || 'quant';
+        session.user.organizationDomain = token.organizationDomain;
       }
       return session;
     },

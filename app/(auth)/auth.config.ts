@@ -14,6 +14,9 @@ type ExtendedUser = {
   email: string;
   subscriptionType: SubscriptionType;
   isAdmin: boolean;
+  organizationName?: string;
+  tenantType: string;
+  organizationDomain?: string;
 };
 
 declare module 'next-auth' {
