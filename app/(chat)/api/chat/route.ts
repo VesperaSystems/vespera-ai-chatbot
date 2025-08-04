@@ -31,35 +31,17 @@ import { myProvider } from '@/lib/ai/providers';
 import { getEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
-import {
-  createResumableStreamContext,
-  type ResumableStreamContext,
-} from 'resumable-stream';
-import { after } from 'next/server';
 import type { Chat } from '@/lib/db/schema';
-import { differenceInSeconds } from 'date-fns';
 
 export const maxDuration = 60;
 
-let globalStreamContext: ResumableStreamContext | null = null;
+// Resumable streams are disabled for now
+// let globalStreamContext: ResumableStreamContext | null = null;
 
 function getStreamContext() {
-  if (!globalStreamContext) {
-    try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
-    } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
-        );
-      } else {
-        console.error(error);
-      }
-    }
-  }
-  return globalStreamContext;
+  // Resumable streams are disabled for now
+  console.log(' > Resumable streams are disabled');
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -295,13 +277,8 @@ export async function POST(request: Request) {
 
     const streamContext = getStreamContext();
 
-    if (streamContext) {
-      return new Response(
-        await streamContext.resumableStream(streamId, () => stream),
-      );
-    } else {
-      return new Response(stream);
-    }
+    // Resumable streams are disabled, always return regular stream
+    return new Response(stream);
   } catch (error) {
     console.error('Chat API Error:', error);
     return new Response(
@@ -370,46 +347,8 @@ export async function GET(request: Request) {
     execute: () => {},
   });
 
-  const stream = await streamContext.resumableStream(
-    recentStreamId,
-    () => emptyDataStream,
-  );
-
-  /*
-   * For when the generation is streaming during SSR
-   * but the resumable stream has concluded at this point.
-   */
-  if (!stream) {
-    const messages = await getMessagesByChatId({ id: chatId });
-    const mostRecentMessage = messages.at(-1);
-
-    if (!mostRecentMessage) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    if (mostRecentMessage.role !== 'assistant') {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-
-    if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const restoredStream = createDataStream({
-      execute: (buffer) => {
-        buffer.writeData({
-          type: 'append-message',
-          message: JSON.stringify(mostRecentMessage),
-        });
-      },
-    });
-
-    return new Response(restoredStream, { status: 200 });
-  }
-
-  return new Response(stream, { status: 200 });
+  // Resumable streams are disabled, return empty stream
+  return new Response(emptyDataStream, { status: 200 });
 }
 
 export async function DELETE(request: Request) {
