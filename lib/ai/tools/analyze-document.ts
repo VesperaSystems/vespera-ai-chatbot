@@ -48,7 +48,9 @@ export const analyzeDocument = ({
           fileName.toLowerCase().endsWith('.docx') ||
           fileName.toLowerCase().endsWith('.doc')
         ) {
-          const result = await mammoth.extractRawText({ buffer });
+          const result = await mammoth.extractRawText({
+            buffer: Buffer.from(buffer),
+          });
           extractedText = result.value;
           if (result.messages.length > 0) {
             console.log('Mammoth warnings:', result.messages);

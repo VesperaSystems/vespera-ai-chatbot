@@ -50,9 +50,9 @@ export const {
           email: user.email,
           subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
-          organizationName: user.organizationName,
+          organizationName: user.organizationName || undefined,
           tenantType: user.tenantType || 'quant',
-          organizationDomain: user.organizationDomain,
+          organizationDomain: user.organizationDomain || undefined,
         };
       },
     }),

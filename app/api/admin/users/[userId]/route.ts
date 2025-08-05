@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { userId: string } },
+  { params }: { params: Promise<{ userId: string }> },
 ) {
   try {
     const session = await auth();
@@ -16,7 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId } = params;
+    const { userId } = await params;
     const body = await request.json();
     const { organizationName, tenantType, organizationDomain } = body;
 

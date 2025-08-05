@@ -12,7 +12,7 @@ async function checkSchema() {
     `);
 
     console.log('Current User table columns:');
-    result.rows.forEach((row: any) => {
+    result.forEach((row: any) => {
       console.log(
         `- ${row.column_name}: ${row.data_type} (nullable: ${row.is_nullable})`,
       );
@@ -26,7 +26,7 @@ async function checkSchema() {
     `);
 
     console.log('\nRecent migrations:');
-    migrationResult.rows.forEach((row: any) => {
+    migrationResult.forEach((row: any) => {
       console.log(`- ${row.id}: ${row.hash}`);
     });
   } catch (error) {
