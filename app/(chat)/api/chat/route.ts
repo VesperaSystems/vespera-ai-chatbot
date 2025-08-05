@@ -28,6 +28,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
 import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
+import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
 import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -266,6 +267,7 @@ export async function POST(request: Request) {
                   'requestSuggestions',
                   'createChart',
                   'analyzeDocument',
+                  'extractDocumentText',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -279,6 +281,7 @@ export async function POST(request: Request) {
             }),
             createChart: createChart({ session, dataStream }),
             analyzeDocument: analyzeDocument({ session, dataStream }),
+            extractDocumentText: extractDocumentText({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
