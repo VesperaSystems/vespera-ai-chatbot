@@ -8,12 +8,20 @@ import { auth } from '@/app/(auth)/auth';
 const FileSchema = z.object({
   file: z
     .instanceof(Blob)
-    .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: 'File size should be less than 5MB',
+    .refine((file) => file.size <= 25 * 1024 * 1024, {
+      message: 'File size should be less than 25MB',
     })
     // Update the file type based on the kind of files you want to accept
-    .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), {
-      message: 'File type should be JPEG or PNG',
+    .refine((file) => [
+      'image/jpeg', 
+      'image/png', 
+      'image/webp',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/msword', // .doc
+      'text/plain', // .txt
+      'application/pdf' // .pdf
+    ].includes(file.type), {
+      message: 'File type should be JPEG, PNG, WebP, DOCX, DOC, TXT, or PDF',
     }),
 });
 

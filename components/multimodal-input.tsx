@@ -207,7 +207,7 @@ function PureMultimodalInput({
 
         return {
           url,
-          name: pathname,
+          name: file.name || pathname,
           contentType,
         };
       }
@@ -294,6 +294,7 @@ function PureMultimodalInput({
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
         ref={fileInputRef}
         multiple
+        accept=".jpg,.jpeg,.png,.webp,.docx,.doc,.txt,.pdf,image/*,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain,application/pdf"
         onChange={handleFileChange}
         tabIndex={-1}
       />

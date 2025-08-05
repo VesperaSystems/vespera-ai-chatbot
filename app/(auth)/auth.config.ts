@@ -14,6 +14,9 @@ type ExtendedUser = {
   email: string;
   subscriptionType: SubscriptionType;
   isAdmin: boolean;
+  organizationName?: string;
+  tenantType: string;
+  organizationDomain?: string;
 };
 
 declare module 'next-auth' {
@@ -89,6 +92,9 @@ export const authConfig = {
           email: user.email,
           subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
+          tenantType: user.tenantType || 'quant',
+          organizationName: user.organizationName || undefined,
+          organizationDomain: user.organizationDomain || undefined,
         };
       },
     }),

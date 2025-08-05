@@ -19,6 +19,9 @@ export const user = pgTable('User', {
   password: varchar('password', { length: 64 }),
   isAdmin: boolean('isAdmin').notNull().default(false),
   subscriptionType: integer('subscriptionType').notNull().default(1), // 1 = regular, 2 = premium, 3 = enterprise
+  organizationName: varchar('organizationName', { length: 255 }),
+  tenantType: varchar('tenantType', { length: 50 }).notNull().default('quant'), // 'quant' or 'legal'
+  organizationDomain: varchar('organizationDomain', { length: 255 }),
 });
 
 export type User = InferSelectModel<typeof user>;

@@ -7,8 +7,9 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
 ### Core Functionality
 
 - **AI Chat Interface**: Real-time chat with multiple AI models (xAI Grok, OpenAI, Claude)
+- **Tenant-Specific AI**: Customized prompts for finance and legal professionals
 - **Document Processing**: Upload and analyze PDFs, images, and text documents
-- **Chart Generation**: Create professional financial charts with real-time stock data
+- **Chart Generation**: Create professional financial charts with real-time stock data (finance tenants)
 - **Code Execution**: Run and edit code with syntax highlighting and error handling
 - **Multimodal Input**: Support for text, images, and file uploads
 - **Artifact System**: Generate and manage various content types (documents, images, code)
@@ -42,7 +43,7 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
 - **Vercel Functions**: Serverless API endpoints
 - **Drizzle ORM**: Type-safe database operations
 - **PostgreSQL**: Primary database (Vercel Postgres)
-- **Redis**: Resumable streams and session management
+- **Redis**: Resumable streams and session management (currently disabled, code ready for future use)
 
 ### Development Tools
 
@@ -88,6 +89,46 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
 - PostgreSQL database
 - AI provider API keys
 
+### File Upload & Document Processing
+
+The chatbot supports uploading and processing various file types:
+
+- **Images**: JPEG, PNG, WebP (for vision analysis)
+- **Documents**: DOCX, DOC, PDF, TXT (for text extraction and analysis)
+- **File Size**: Up to 25MB per file
+- **Processing**: AI can analyze, summarize, and answer questions about uploaded documents
+
+**Note**: Document files (DOCX, PDF, TXT) are processed server-side to extract text content before being sent to the AI, as OpenAI's API doesn't support these file types directly in user messages. The system uses:
+- **mammoth** for DOCX/DOC files
+- **TextDecoder** for TXT files
+- **PDF support** - Coming soon (currently shows conversion message)
+
+### Tenant Management
+
+The application supports multi-tenant architecture with specialized AI prompts for different professional domains:
+
+- **Quant Tenants**: Specialized prompts for quantitative analysts, portfolio managers, and financial professionals
+  - Financial modeling and analysis
+  - Investment strategy development
+  - Risk management and portfolio optimization
+  - Chart creation with technical indicators
+  - Market analysis and data interpretation
+
+- **Legal Tenants**: Specialized prompts for attorneys, paralegals, and legal professionals
+  - Legal research and case law analysis
+  - Contract review and drafting
+  - Regulatory compliance and risk assessment
+  - Intellectual property and patent analysis
+  - Litigation support and discovery
+
+**Auto-Detection**: Users with 'legal' in their username are automatically assigned to legal tenant type.
+
+**Organizations**: 
+- **x4group**: Legal organization with legal tenant type
+- **Default**: Quant tenant type for financial professionals
+
+**Admin Interface**: Administrators can manage tenant types and organization information through the admin panel at `/admin/tenants`.
+
 ### Installation
 
 1. **Clone the repository**
@@ -115,8 +156,8 @@ A sophisticated AI-powered chatbot built with Next.js 15, featuring advanced cha
    # Database
    POSTGRES_URL=your_postgres_connection_string
 
-   # Redis (for resumable streams)
-   REDIS_URL=your_redis_connection_string
+   # Redis (for resumable streams - currently disabled)
+   # REDIS_URL=your_redis_connection_string
 
    # AI Providers
    XAI_API_KEY=your_xai_api_key
@@ -187,7 +228,7 @@ pnpm run test         # Run Playwright tests
 ```env
 # Required
 POSTGRES_URL=your_production_postgres_url
-REDIS_URL=your_production_redis_url
+# REDIS_URL=your_production_redis_url (currently disabled)
 AUTH_SECRET=your_production_auth_secret
 NEXTAUTH_URL=https://your-domain.com
 
@@ -232,16 +273,78 @@ The app supports multiple AI providers:
 
 ### Redis Configuration
 
-- **Resumable Streams**: Enables chat sessions to continue from where they left off if interrupted
-- **Stream Context**: Uses Redis for session persistence and recovery
+- **Resumable Streams**: Currently disabled but code is ready for future use
+- **Stream Context**: Uses Redis for session persistence and recovery (when enabled)
 - **Graceful Fallback**: App continues without resumable streams if Redis is unavailable
 - **Local Development**: Redis is disabled locally to avoid connection issues
-- **Production**: Uses Vercel KV (Redis-compatible) for resumable streams
+- **Production**: Uses Vercel KV (Redis-compatible) for resumable streams (when enabled)
+
+#### Re-enabling Redis/Resumable Streams
+
+To re-enable Redis and resumable streams functionality:
+
+1. **Environment Variables**:
+
+   ```env
+   # Uncomment and configure Redis URL
+   REDIS_URL=your_redis_connection_string
+   ```
+
+2. **Code Changes** (`app/(chat)/api/chat/route.ts`):
+
+   ```typescript
+   // Uncomment the global stream context
+   let globalStreamContext: ResumableStreamContext | null = null;
+
+   // Replace the disabled getStreamContext function with:
+   function getStreamContext() {
+     if (!globalStreamContext) {
+       try {
+         globalStreamContext = createResumableStreamContext({
+           waitUntil: after,
+         });
+       } catch (error: any) {
+         if (error.message.includes("REDIS_URL")) {
+           console.log(
+             " > Resumable streams are disabled due to missing REDIS_URL"
+           );
+         } else {
+           console.error(error);
+         }
+       }
+     }
+     return globalStreamContext;
+   }
+
+   // In POST function, replace the simplified return with:
+   const streamContext = getStreamContext();
+   if (streamContext) {
+     return new Response(
+       await streamContext.resumableStream(streamId, () => stream)
+     );
+   } else {
+     return new Response(stream);
+   }
+
+   // In GET function, restore the full resumable stream logic
+   ```
+
+3. **Database**: The stream table and related queries are already in place and ready to use.
+
+4. **Dependencies**: Redis and resumable-stream packages are already installed.
+
+5. **Testing**: After re-enabling, test with:
+   ```bash
+   pnpm run build
+   pnpm run test
+   ```
+
+**📖 For detailed setup instructions, see [REDIS_SETUP.md](REDIS_SETUP.md)**
 
 ### File Upload Limits
 
 - **Images**: 10MB max, PNG/JPG/WebP
-- **Documents**: 25MB max, PDF/TXT/DOCX
+- **Documents**: 25MB max, PDF/TXT/DOCX/DOC
 - **Code Files**: 5MB max, various programming languages
 
 ## 🧪 Testing

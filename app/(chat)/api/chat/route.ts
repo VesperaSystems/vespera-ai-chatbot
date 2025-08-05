@@ -6,7 +6,8 @@ import {
   streamText,
 } from 'ai';
 import { auth } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import type { RequestHints } from '@/lib/ai/prompts';
+import { getTenantSystemPrompt } from '@/lib/ai/tenant-prompts';
 import {
   createStreamId,
   deleteChatById,
@@ -26,40 +27,24 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
+import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
+import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { getEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
-import {
-  createResumableStreamContext,
-  type ResumableStreamContext,
-} from 'resumable-stream';
-import { after } from 'next/server';
 import type { Chat } from '@/lib/db/schema';
-import { differenceInSeconds } from 'date-fns';
 
 export const maxDuration = 60;
 
-let globalStreamContext: ResumableStreamContext | null = null;
+// Resumable streams are disabled for now
+// let globalStreamContext: ResumableStreamContext | null = null;
 
 function getStreamContext() {
-  if (!globalStreamContext) {
-    try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
-    } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
-        );
-      } else {
-        console.error(error);
-      }
-    }
-  }
-  return globalStreamContext;
+  // Resumable streams are disabled for now
+  console.log(' > Resumable streams are disabled');
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -175,10 +160,59 @@ export async function POST(request: Request) {
 
     const previousMessages = await getMessagesByChatId({ id });
 
+    // Filter out document attachments that OpenAI doesn't support
+    const documentAttachments =
+      message.experimental_attachments?.filter(
+        (attachment) =>
+          attachment.contentType ===
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          attachment.contentType === 'application/msword' ||
+          attachment.contentType === 'application/pdf' ||
+          attachment.contentType === 'text/plain',
+      ) || [];
+
+    const imageAttachments =
+      message.experimental_attachments?.filter(
+        (attachment) =>
+          attachment.contentType === 'image/jpeg' ||
+          attachment.contentType === 'image/png' ||
+          attachment.contentType === 'image/webp',
+      ) || [];
+
+    // Create a modified message without document attachments for the AI
+    let messageForAI = {
+      ...message,
+      experimental_attachments: imageAttachments, // Only send images to AI
+    };
+
+    // If there are document attachments, we'll add the extracted text to the message
+    if (documentAttachments.length > 0) {
+      const documentTexts = [];
+      for (const attachment of documentAttachments) {
+        documentTexts.push(
+          `[Document: ${attachment.name}]\nURL: ${attachment.url}\nType: ${attachment.contentType}\nThis document has been uploaded and is ready for analysis.`,
+        );
+      }
+
+      // Add the document information to the message content
+      const documentInfo = `\n\n--- Uploaded Documents ---\n${documentTexts.join('\n\n')}\n\nPlease use the extractDocumentText tool to analyze these documents.`;
+
+      messageForAI = {
+        ...messageForAI,
+        parts: [
+          ...messageForAI.parts,
+          {
+            type: 'text',
+            text: documentInfo,
+          },
+        ],
+      };
+    }
+
     const messages = appendClientMessage({
       // @ts-expect-error: todo add type conversion from DBMessage[] to UIMessage[]
       messages: previousMessages,
-      message,
+      message: messageForAI,
     });
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -212,10 +246,14 @@ export async function POST(request: Request) {
     await createStreamId({ streamId, chatId: id });
 
     const stream = createDataStream({
-      execute: (dataStream) => {
+      execute: async (dataStream: DataStreamWriter) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: getTenantSystemPrompt({
+            tenantType: session.user.tenantType || 'quant',
+            selectedChatModel,
+            requestHints,
+          }),
           messages,
           maxSteps: 5,
           experimental_activeTools:
@@ -227,6 +265,7 @@ export async function POST(request: Request) {
                   'updateDocument',
                   'requestSuggestions',
                   'createChart',
+                  'analyzeDocument',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -239,6 +278,7 @@ export async function POST(request: Request) {
               dataStream,
             }),
             createChart: createChart({ session, dataStream }),
+            analyzeDocument: analyzeDocument({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
@@ -288,22 +328,22 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
+      onError: (error) => {
+        console.error('Stream error:', error);
         return 'Oops, an error occurred!';
       },
     });
 
     const streamContext = getStreamContext();
 
-    if (streamContext) {
-      return new Response(
-        await streamContext.resumableStream(streamId, () => stream),
-      );
-    } else {
-      return new Response(stream);
-    }
+    // Resumable streams are disabled, always return regular stream
+    return new Response(stream);
   } catch (error) {
     console.error('Chat API Error:', error);
+    console.error(
+      'Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace',
+    );
     return new Response(
       `Error in chat processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
       {
@@ -370,46 +410,8 @@ export async function GET(request: Request) {
     execute: () => {},
   });
 
-  const stream = await streamContext.resumableStream(
-    recentStreamId,
-    () => emptyDataStream,
-  );
-
-  /*
-   * For when the generation is streaming during SSR
-   * but the resumable stream has concluded at this point.
-   */
-  if (!stream) {
-    const messages = await getMessagesByChatId({ id: chatId });
-    const mostRecentMessage = messages.at(-1);
-
-    if (!mostRecentMessage) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    if (mostRecentMessage.role !== 'assistant') {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-
-    if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const restoredStream = createDataStream({
-      execute: (buffer) => {
-        buffer.writeData({
-          type: 'append-message',
-          message: JSON.stringify(mostRecentMessage),
-        });
-      },
-    });
-
-    return new Response(restoredStream, { status: 200 });
-  }
-
-  return new Response(stream, { status: 200 });
+  // Resumable streams are disabled, return empty stream
+  return new Response(emptyDataStream, { status: 200 });
 }
 
 export async function DELETE(request: Request) {
