@@ -123,6 +123,47 @@ function PureMultimodalInput({
       return;
     }
 
+    // Check if this is a Legal tenant with document attachments and legal analysis request
+    const isLegalTenant = session.user.tenantType === 'legal';
+    const hasDocumentAttachments = attachments.some(
+      (attachment) =>
+        attachment.contentType?.includes('document') ||
+        attachment.contentType?.includes('pdf') ||
+        attachment.contentType?.includes('word') ||
+        attachment.contentType?.includes('text') ||
+        attachment.name?.toLowerCase().endsWith('.docx') ||
+        attachment.name?.toLowerCase().endsWith('.doc') ||
+        attachment.name?.toLowerCase().endsWith('.pdf') ||
+        attachment.name?.toLowerCase().endsWith('.txt'),
+    );
+    const isLegalAnalysisRequest =
+      input.toLowerCase().includes('legal') ||
+      input.toLowerCase().includes('contract') ||
+      input.toLowerCase().includes('agreement') ||
+      input.toLowerCase().includes('clause') ||
+      input.toLowerCase().includes('terms') ||
+      input.toLowerCase().includes('liability') ||
+      input.toLowerCase().includes('compliance');
+
+    if (isLegalTenant && hasDocumentAttachments && isLegalAnalysisRequest) {
+      console.log(
+        '🚀 Legal tenant with legal document analysis request - redirecting immediately',
+      );
+
+      // Store the document data for the legal analysis editor
+      const documentData = {
+        analysisResult: null, // Will be populated by the analysis
+        fileUrl: attachments[0].url,
+        fileName: attachments[0].name,
+      };
+
+      sessionStorage.setItem('legalAnalysisData', JSON.stringify(documentData));
+
+      // Redirect immediately to the legal analysis editor
+      window.location.href = '/legal-analysis-editor';
+      return;
+    }
+
     try {
       const { canSend, remaining } = await checkUserMessageLimit(
         session.user.id,
@@ -169,6 +210,47 @@ function PureMultimodalInput({
   };
 
   const submitForm = useCallback(() => {
+    // Check if this is a Legal tenant with document attachments and legal analysis request
+    const isLegalTenant = session?.user?.tenantType === 'legal';
+    const hasDocumentAttachments = attachments.some(
+      (attachment) =>
+        attachment.contentType?.includes('document') ||
+        attachment.contentType?.includes('pdf') ||
+        attachment.contentType?.includes('word') ||
+        attachment.contentType?.includes('text') ||
+        attachment.name?.toLowerCase().endsWith('.docx') ||
+        attachment.name?.toLowerCase().endsWith('.doc') ||
+        attachment.name?.toLowerCase().endsWith('.pdf') ||
+        attachment.name?.toLowerCase().endsWith('.txt'),
+    );
+    const isLegalAnalysisRequest =
+      input.toLowerCase().includes('legal') ||
+      input.toLowerCase().includes('contract') ||
+      input.toLowerCase().includes('agreement') ||
+      input.toLowerCase().includes('clause') ||
+      input.toLowerCase().includes('terms') ||
+      input.toLowerCase().includes('liability') ||
+      input.toLowerCase().includes('compliance');
+
+    if (isLegalTenant && hasDocumentAttachments && isLegalAnalysisRequest) {
+      console.log(
+        '🚀 Legal tenant with legal document analysis request - redirecting immediately (submitForm)',
+      );
+
+      // Store the document data for the legal analysis editor
+      const documentData = {
+        analysisResult: null, // Will be populated by the analysis
+        fileUrl: attachments[0].url,
+        fileName: attachments[0].name,
+      };
+
+      sessionStorage.setItem('legalAnalysisData', JSON.stringify(documentData));
+
+      // Redirect immediately to the legal analysis editor
+      window.location.href = '/legal-analysis-editor';
+      return;
+    }
+
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
     handleSubmit(undefined, {
@@ -189,6 +271,8 @@ function PureMultimodalInput({
     setLocalStorageInput,
     width,
     chatId,
+    session?.user?.tenantType,
+    input,
   ]);
 
   const uploadFile = async (file: File) => {
@@ -279,17 +363,18 @@ function PureMultimodalInput({
         )}
       </AnimatePresence>
 
-      {messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions
-            append={append}
-            chatId={chatId}
-            selectedVisibilityType={selectedVisibilityType}
-          />
-        )}
+      {messages.length === 0 && uploadQueue.length === 0 && (
+        <SuggestedActions
+          append={append}
+          chatId={chatId}
+          selectedVisibilityType={selectedVisibilityType}
+          attachments={attachments}
+          handleSubmit={handleSubmit}
+        />
+      )}
 
       <input
+        data-testid="file-input"
         type="file"
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
         ref={fileInputRef}
@@ -378,12 +463,23 @@ function PureMultimodalInput({
               ) : (
                 modelSupportsVision(selectedModelId) && (
                   <Button
+                    data-testid="attachments-button"
                     type="button"
                     variant="outline"
                     size="icon"
                     className="size-10"
                     onClick={(event) => {
                       event.preventDefault();
+                      console.log('File attachment button clicked');
+                      console.log(
+                        'fileInputRef.current:',
+                        fileInputRef.current,
+                      );
+                      console.log('selectedModelId:', selectedModelId);
+                      console.log(
+                        'modelSupportsVision:',
+                        modelSupportsVision(selectedModelId),
+                      );
                       fileInputRef.current?.click();
                     }}
                   >

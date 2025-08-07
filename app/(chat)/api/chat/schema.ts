@@ -19,14 +19,14 @@ export const postRequestBodySchema = z.object({
           url: z.string().url(),
           name: z.string().min(1).max(2000),
           contentType: z.enum([
-            'image/png', 
-            'image/jpg', 
+            'image/png',
+            'image/jpg',
             'image/jpeg',
             'image/webp',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
             'application/msword', // .doc
             'text/plain', // .txt
-            'application/pdf' // .pdf
+            'application/pdf', // .pdf
           ]),
         }),
       )
@@ -36,6 +36,7 @@ export const postRequestBodySchema = z.object({
     'chat-model',
     'gpt-3.5',
     'gpt-4',
+    'gpt-4o',
     'chat-model-reasoning',
   ]),
   selectedVisibilityType: z.enum(['public', 'private']),

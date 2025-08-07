@@ -94,6 +94,28 @@ export const documentHandlersByArtifactKind: Array<DocumentHandler> = [
   codeDocumentHandler,
   imageDocumentHandler,
   sheetDocumentHandler,
+  createDocumentHandler({
+    kind: 'json',
+    onCreateDocument: async ({ id, title, dataStream }) => {
+      // For JSON artifacts, we'll create a placeholder content
+      // The actual JSON data will be handled by the client-side artifact
+      return JSON.stringify({ type: 'json', title, id });
+    },
+    onUpdateDocument: async ({ document, description, dataStream }) => {
+      // For JSON artifacts, we'll update with the new description
+      return JSON.stringify({
+        type: 'json',
+        title: document.title,
+        description,
+      });
+    },
+  }),
 ];
 
-export const artifactKinds = ['text', 'code', 'image', 'sheet'] as const;
+export const artifactKinds = [
+  'text',
+  'code',
+  'image',
+  'sheet',
+  'json',
+] as const;

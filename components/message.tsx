@@ -6,19 +6,38 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon } from './icons';
+import { SparklesIcon } from './icons';
 import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import equal from 'fast-deep-equal';
 import { cn, sanitizeText } from '@/lib/utils';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { LegalAnalysisResults } from '@/components/legal-analysis-results';
+import { toast } from 'sonner';
+
+interface AnalysisResultData {
+  document: string;
+  issues: Array<{
+    id: string;
+    type: string;
+    original_text: string;
+    recommended_text: string;
+    comment: string;
+  }>;
+  metadata?: {
+    fileName?: string;
+    fileType?: string;
+    charactersAnalyzed?: number;
+    analysisTimestamp?: string;
+    analysisType?: string;
+    issuesFound?: number;
+  };
+}
 
 const PurePreviewMessage = ({
   chatId,
@@ -107,23 +126,7 @@ const PurePreviewMessage = ({
                 if (mode === 'view') {
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
-                      {message.role === 'user' && !isReadonly && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              data-testid="message-edit-button"
-                              variant="ghost"
-                              className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
-                              onClick={() => {
-                                setMode('edit');
-                              }}
-                            >
-                              <PencilEditIcon />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Edit message</TooltipContent>
-                        </Tooltip>
-                      )}
+                      <div className="size-8" />
 
                       <div
                         data-testid="message-content"
@@ -132,7 +135,69 @@ const PurePreviewMessage = ({
                             message.role === 'user',
                         })}
                       >
-                        <Markdown>{sanitizeText(part.text)}</Markdown>
+                        {part.text.includes('<!--LEGAL_ANALYSIS_RESULT:') ? (
+                          (() => {
+                            console.log('Found legal analysis marker in text');
+                            const match = part.text.match(
+                              /<!--LEGAL_ANALYSIS_RESULT:(.*?)-->/,
+                            );
+                            if (match) {
+                              try {
+                                const analysisResult = JSON.parse(
+                                  match[1],
+                                ) as AnalysisResultData;
+                                console.log(
+                                  'Successfully parsed analysis result:',
+                                  analysisResult,
+                                );
+                                const textWithoutMarker = part.text.replace(
+                                  /<!--LEGAL_ANALYSIS_RESULT:.*?-->/,
+                                  '',
+                                );
+                                return (
+                                  <>
+                                    <Markdown>
+                                      {sanitizeText(textWithoutMarker)}
+                                    </Markdown>
+                                    <LegalAnalysisResults
+                                      analysisResult={analysisResult}
+                                      onApplyChanges={async (
+                                        updatedAnalysisResult,
+                                      ) => {
+                                        console.log(
+                                          'Applying changes:',
+                                          updatedAnalysisResult,
+                                        );
+                                        toast.success(
+                                          'Changes applied successfully!',
+                                        );
+                                      }}
+                                      onDownload={() => {
+                                        console.log('Downloading document');
+                                        toast.success(
+                                          'Document downloaded successfully!',
+                                        );
+                                      }}
+                                    />
+                                  </>
+                                );
+                              } catch (error) {
+                                console.error(
+                                  'Failed to parse analysis result:',
+                                  error,
+                                );
+                                return (
+                                  <Markdown>{sanitizeText(part.text)}</Markdown>
+                                );
+                              }
+                            }
+                            return (
+                              <Markdown>{sanitizeText(part.text)}</Markdown>
+                            );
+                          })()
+                        ) : (
+                          <Markdown>{sanitizeText(part.text)}</Markdown>
+                        )}
                       </div>
                     </div>
                   );
@@ -233,6 +298,31 @@ const PurePreviewMessage = ({
                 isLoading={isLoading}
                 isReadonly={isReadonly}
               />
+            )}
+
+            {/* Add redirect button for assistant messages */}
+            {message.role === 'assistant' && !isLoading && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('🧪 Manual redirect button clicked');
+
+                    // Clear any existing test data
+                    sessionStorage.removeItem('legalAnalysisData');
+
+                    console.log(
+                      '🚀 Redirecting to legal analysis editor with chat ID',
+                    );
+
+                    // Redirect to legal analysis editor with chat ID
+                    window.location.href = `/legal-analysis-editor?id=${chatId}`;
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  📋 Open Legal Analysis Editor
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -5,6 +5,7 @@ import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
+import { getDefaultSubscriptionTypeForUser } from '@/lib/ai/models';
 
 export const {
   handlers: { GET, POST },
@@ -37,8 +38,10 @@ export const {
         const passwordsMatch = await compare(password, user.password);
         if (!passwordsMatch) return null;
 
-        // Ensure we have a valid subscription type
-        const subscriptionType = Number(user.subscriptionType);
+        // Automatically assign enterprise subscription to legal users
+        const subscriptionType = getDefaultSubscriptionTypeForUser(
+          user.tenantType,
+        );
         const validSubscriptionType = Object.values(
           SUBSCRIPTION_TYPES,
         ).includes(subscriptionType as 1 | 2 | 3)
@@ -50,9 +53,8 @@ export const {
           email: user.email,
           subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
-          organizationName: user.organizationName || undefined,
-          tenantType: user.tenantType || 'quant',
-          organizationDomain: user.organizationDomain || undefined,
+          tenantType: user.tenantType || 'quant', // Read from database, default to 'quant'
+          tenant: user.tenant, // Include tenant information
         };
       },
     }),
@@ -65,9 +67,8 @@ export const {
         token.email = user.email;
         token.subscriptionType = Number(user.subscriptionType);
         token.isAdmin = user.isAdmin;
-        token.organizationName = user.organizationName;
-        token.tenantType = user.tenantType || 'quant';
-        token.organizationDomain = user.organizationDomain;
+        token.tenantType = user.tenantType || 'quant'; // Read from user object
+        token.tenant = user.tenant; // Include tenant information
       }
       return token;
     },
@@ -77,9 +78,8 @@ export const {
         session.user.email = token.email;
         session.user.subscriptionType = Number(token.subscriptionType);
         session.user.isAdmin = token.isAdmin;
-        session.user.organizationName = token.organizationName;
-        session.user.tenantType = token.tenantType || 'quant';
-        session.user.organizationDomain = token.organizationDomain;
+        session.user.tenantType = token.tenantType || 'quant'; // Read from token
+        session.user.tenant = token.tenant; // Include tenant information
       }
       return session;
     },

@@ -61,11 +61,18 @@ export async function generateTitleFromUserMessage({
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
   try {
-    const [message] = await getMessageById({ id });
+    const messages = await getMessageById({ id });
 
-    if (!message) {
-      throw new Error(`Message with id ${id} not found`);
+    if (!messages || messages.length === 0) {
+      // Message not found - this could happen if the message was already deleted
+      // or if there's a race condition. We'll log this but not throw an error.
+      console.warn(
+        `Message with id ${id} not found - skipping deleteTrailingMessages`,
+      );
+      return;
     }
+
+    const [message] = messages;
 
     if (!message.chatId) {
       throw new Error(`Message ${id} has no associated chat ID`);

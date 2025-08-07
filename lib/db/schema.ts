@@ -19,12 +19,24 @@ export const user = pgTable('User', {
   password: varchar('password', { length: 64 }),
   isAdmin: boolean('isAdmin').notNull().default(false),
   subscriptionType: integer('subscriptionType').notNull().default(1), // 1 = regular, 2 = premium, 3 = enterprise
-  organizationName: varchar('organizationName', { length: 255 }),
-  tenantType: varchar('tenantType', { length: 50 }).notNull().default('quant'), // 'quant' or 'legal'
-  organizationDomain: varchar('organizationDomain', { length: 255 }),
+  tenantType: varchar('tenantType', { length: 50 }).notNull().default('quant'), // 'quant', 'legal', 'finance'
+  tenantId: uuid('tenantId').references(() => tenant.id),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });
 
 export type User = InferSelectModel<typeof user>;
+
+export const tenant = pgTable('Tenant', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  domain: varchar('domain', { length: 255 }),
+  tenantType: varchar('tenantType', { length: 50 }).notNull().default('quant'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type Tenant = InferSelectModel<typeof tenant>;
 
 export const chat = pgTable('Chat', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -120,7 +132,7 @@ export const document = pgTable(
     createdAt: timestamp('createdAt').notNull(),
     title: text('title').notNull(),
     content: text('content'),
-    kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
+    kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet', 'json'] })
       .notNull()
       .default('text'),
     userId: uuid('userId')

@@ -17,8 +17,14 @@ export type DataStreamDelta = {
     | 'suggestion'
     | 'clear'
     | 'finish'
-    | 'kind';
-  content: string | Suggestion;
+    | 'kind'
+    | 'json-data'
+    | 'download-info'
+    | 'readonly-flag'
+    | 'file-info'
+    | 'analysis-result'
+    | 'redirect-to-json-editor';
+  content: string | Suggestion | any;
 };
 
 export function DataStreamHandler({ id }: { id: string }) {

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { tool } from 'ai';
-import { generateUUID } from '@/lib/utils';
 import mammoth from 'mammoth';
 import { OpenAI } from 'openai';
 import { Ajv } from 'ajv';
@@ -225,34 +224,17 @@ Provide a comprehensive legal analysis with specific issues, recommended text ch
         console.log('📋 Legal Analysis - Final Result:');
         console.log(JSON.stringify(analysisResult, null, 2));
 
-        // Create a text artifact with the analysis results
+        // Instead of sending text to chat, redirect to JSON editor
+        console.log('🔄 Sending redirect-to-json-editor command');
         dataStream.writeData({
-          type: 'kind',
-          content: 'text',
+          type: 'redirect-to-json-editor',
+          content: {
+            analysisResult: analysisResult,
+            fileUrl: fileUrl,
+            fileName: fileName,
+          },
         });
-
-        dataStream.writeData({
-          type: 'id',
-          content: generateUUID(),
-        });
-
-        dataStream.writeData({
-          type: 'title',
-          content: `Legal Analysis: ${documentName}`,
-        });
-
-        dataStream.writeData({
-          type: 'clear',
-          content: '',
-        });
-
-        // Format the analysis results for display
-        const formattedAnalysis = formatLegalAnalysis(analysisResult);
-
-        dataStream.writeData({
-          type: 'text',
-          content: formattedAnalysis,
-        });
+        console.log('✅ Redirect command sent successfully');
 
         dataStream.writeData({ type: 'finish', content: '' });
 

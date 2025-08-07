@@ -1,49 +1,66 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
 import { db } from '@/lib/db';
 import { user } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> },
+  request: Request,
+  { params }: { params: { userId: string } },
 ) {
   try {
     const session = await auth();
 
     if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { userId } = await params;
+    const { userId } = params;
     const body = await request.json();
-    const { organizationName, tenantType, organizationDomain } = body;
+    const { isAdmin, subscriptionType, tenantId, tenantType } = body;
 
-    // Validate tenant type
-    if (tenantType && !['quant', 'legal'].includes(tenantType)) {
-      return NextResponse.json(
-        { error: 'Invalid tenant type. Must be "quant" or "legal"' },
-        { status: 400 },
-      );
+    if (!userId) {
+      return new NextResponse('User ID is required', { status: 400 });
     }
 
-    // Update user
-    await db
-      .update(user)
-      .set({
-        organizationName: organizationName || null,
-        tenantType: tenantType || 'quant',
-        organizationDomain: organizationDomain || null,
-      })
-      .where(eq(user.id, userId));
+    // Log the update request for debugging
+    console.log('Updating user:', {
+      userId,
+      isAdmin,
+      subscriptionType,
+      tenantId,
+      tenantType,
+    });
 
-    return NextResponse.json({ success: true });
+    const updateData: any = {};
+    if (typeof isAdmin === 'boolean') {
+      updateData.isAdmin = isAdmin;
+    }
+    if (typeof subscriptionType === 'number') {
+      updateData.subscriptionType = subscriptionType;
+    }
+    if (tenantId !== undefined) {
+      updateData.tenantId = tenantId || null;
+    }
+    if (tenantType !== undefined) {
+      updateData.tenantType = tenantType || 'quant';
+    }
+
+    // Log the update data for debugging
+    console.log('Update data:', updateData);
+
+    const [updatedUser] = await db
+      .update(user)
+      .set(updateData)
+      .where(eq(user.id, userId))
+      .returning();
+
+    // Log the updated user for debugging
+    console.log('Updated user:', updatedUser);
+
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 },
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

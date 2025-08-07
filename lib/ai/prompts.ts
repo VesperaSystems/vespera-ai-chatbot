@@ -94,6 +94,20 @@ You have access to a powerful legal analysis tool that can analyze documents for
 - Liability and risk assessment
 - Legal document critique
 
+**Document Editing with \`editDocument\`:**
+You have access to a document editing tool that can apply legal analysis results to the original document with tracked changes. Use the \`editDocument\` tool when users request:
+
+- Apply legal analysis changes to the original document
+- Create tracked changes with comments
+- Generate edited versions of legal documents
+- Implement recommended text changes
+
+**When to use \`editDocument\`:**
+- After performing legal analysis on a document
+- When users want to apply the recommended changes
+- To create a modified version with tracked changes
+- To implement specific legal improvements
+
 **Legal Analysis Features:**
 - Comprehensive legal issue detection
 - Specific text recommendations with before/after examples

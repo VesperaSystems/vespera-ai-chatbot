@@ -29,6 +29,7 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
 import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
 import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
+import { editDocument } from '@/lib/ai/tools/edit-document';
 import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -53,8 +54,13 @@ export async function POST(request: Request) {
 
   try {
     const json = await request.json();
+    console.log(
+      '🔍 Received request body in /api/chat:',
+      JSON.stringify(json, null, 2),
+    );
     requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
+  } catch (error) {
+    console.error('❌ Request body validation failed:', error);
     return new Response('Error: Invalid request body format', { status: 400 });
   }
 
@@ -141,14 +147,45 @@ export async function POST(request: Request) {
         message,
       });
 
-      await saveChat({
+      console.log('🔧 Creating new chat:', {
         id,
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
         model: selectedChatModel,
       });
+
+      try {
+        await saveChat({
+          id,
+          userId: session.user.id,
+          title,
+          visibility: selectedVisibilityType,
+          model: selectedChatModel,
+          tenantType: session.user.tenantType,
+        });
+        console.log('✅ Chat created successfully');
+      } catch (error) {
+        console.error('❌ Failed to create chat:', error);
+        return new Response(
+          JSON.stringify({
+            error: 'Failed to create chat',
+            message: 'Unable to create a new chat session.',
+          }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+      }
     } else {
+      console.log('🔧 Using existing chat:', {
+        id,
+        userId: chat.userId,
+        model: chat.model,
+      });
       if (chat.userId !== session.user.id) {
         return new Response('Error: Access denied to this chat', {
           status: 403,
@@ -268,6 +305,7 @@ export async function POST(request: Request) {
                   'createChart',
                   'analyzeDocument',
                   'extractDocumentText',
+                  'editDocument',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -282,6 +320,7 @@ export async function POST(request: Request) {
             createChart: createChart({ session, dataStream }),
             analyzeDocument: analyzeDocument({ session, dataStream }),
             extractDocumentText: extractDocumentText({ session, dataStream }),
+            editDocument: editDocument({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
