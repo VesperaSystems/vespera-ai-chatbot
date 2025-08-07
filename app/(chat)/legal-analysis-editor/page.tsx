@@ -273,23 +273,23 @@ export default function LegalAnalysisEditorPage() {
     switch (type.toLowerCase()) {
       case 'ambiguous_language':
       case 'ambiguity':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-500/10 text-yellow-700 border-yellow-200 dark:text-yellow-300 dark:border-yellow-800';
       case 'enforceability':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-500/10 text-red-700 border-red-200 dark:text-red-300 dark:border-red-800';
       case 'regulatory_compliance':
       case 'compliance':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-500/10 text-blue-700 border-blue-200 dark:text-blue-300 dark:border-blue-800';
       case 'liability':
       case 'potential_liability':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-500/10 text-orange-700 border-orange-200 dark:text-orange-300 dark:border-orange-800';
       case 'missing_clause':
       case 'missing_benefits_clause':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-purple-500/10 text-purple-700 border-purple-200 dark:text-purple-300 dark:border-purple-800';
       case 'legal_terminology':
       case 'vague_confidentiality':
-        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        return 'bg-indigo-500/10 text-indigo-700 border-indigo-200 dark:text-indigo-300 dark:border-indigo-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-500/10 text-gray-700 border-gray-200 dark:text-gray-300 dark:border-gray-800';
     }
   };
 
@@ -480,7 +480,7 @@ export default function LegalAnalysisEditorPage() {
                     <h4 className="font-medium mb-2 text-foreground">
                       Original Text:
                     </h4>
-                    <div className="bg-muted p-3 rounded-md text-sm text-foreground">
+                    <div className="bg-muted p-3 rounded-md text-sm text-foreground border">
                       {issue.original_text}
                     </div>
                   </div>
@@ -498,7 +498,7 @@ export default function LegalAnalysisEditorPage() {
                           e.target.value,
                         )
                       }
-                      className="w-full bg-green-50 border border-green-200 p-3 rounded-md text-sm resize-none text-foreground"
+                      className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
                       rows={4}
                     />
                   </div>
@@ -512,7 +512,7 @@ export default function LegalAnalysisEditorPage() {
                       onChange={(e) =>
                         handleIssueChange(issue.id, 'comment', e.target.value)
                       }
-                      className="w-full bg-blue-50 border border-blue-200 p-3 rounded-md text-sm resize-none text-foreground"
+                      className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
                       rows={4}
                       placeholder="Edit comment..."
                     />
@@ -529,30 +529,55 @@ export default function LegalAnalysisEditorPage() {
               <CardTitle>Analysis Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose max-w-none">
-                <h3>Document: {legalData.analysisResult.document}</h3>
-                <p>
-                  <strong>Total Issues Found:</strong>{' '}
-                  {legalData.analysisResult.issues.length}
-                </p>
-                <p>
-                  <strong>Analysis Type:</strong>{' '}
-                  {legalData.analysisResult.metadata?.analysisType || 'legal'}
-                </p>
-                <p>
-                  <strong>Characters Analyzed:</strong>{' '}
-                  {legalData.analysisResult.metadata?.charactersAnalyzed ||
-                    'Unknown'}
-                </p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    Document: {legalData.analysisResult.document}
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <span className="font-medium text-foreground">
+                      Total Issues Found:
+                    </span>{' '}
+                    <span className="text-muted-foreground">
+                      {legalData.analysisResult.issues.length}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-foreground">
+                      Analysis Type:
+                    </span>{' '}
+                    <span className="text-muted-foreground">
+                      {legalData.analysisResult.metadata?.analysisType ||
+                        'legal'}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-foreground">
+                      Characters Analyzed:
+                    </span>{' '}
+                    <span className="text-muted-foreground">
+                      {legalData.analysisResult.metadata?.charactersAnalyzed ||
+                        'Unknown'}
+                    </span>
+                  </p>
+                </div>
 
-                <h4>Issue Types Found:</h4>
-                <ul>
-                  {Array.from(
-                    new Set(editableIssues.map((issue) => issue.type)),
-                  ).map((type) => (
-                    <li key={type}>{type}</li>
-                  ))}
-                </ul>
+                <div>
+                  <h4 className="font-medium mb-2 text-foreground">
+                    Issue Types Found:
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {Array.from(
+                      new Set(editableIssues.map((issue) => issue.type)),
+                    ).map((type) => (
+                      <li key={type} className="text-sm text-muted-foreground">
+                        {type}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </CardContent>
           </Card>
