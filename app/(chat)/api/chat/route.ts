@@ -29,7 +29,6 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createChart } from '@/lib/ai/tools/create-chart';
 import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
 import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
-import { editDocument } from '@/lib/ai/tools/edit-document';
 import type { DataStreamWriter } from 'ai';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';

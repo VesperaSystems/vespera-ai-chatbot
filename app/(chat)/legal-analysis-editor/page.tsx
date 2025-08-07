@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,7 @@ import {
   UploadIcon,
   PlayIcon,
 } from '@/components/icons';
-import { toast } from 'sonner';
-import { generateUUID } from '@/lib/utils';
+import { toast } from '@/components/toast';
 
 interface LegalAnalysisIssue {
   id: string;
@@ -65,6 +64,78 @@ export default function LegalAnalysisEditorPage() {
   const searchParams = useSearchParams();
   const chatId = searchParams.get('id');
 
+  // Load data from sessionStorage on component mount
+  useEffect(() => {
+    console.log('🔄 LegalAnalysisEditor: Loading data from sessionStorage');
+
+    try {
+      if (typeof window === 'undefined') {
+        console.log(
+          '📭 LegalAnalysisEditor: Window is not defined (server-side)',
+        );
+        return;
+      }
+
+      const storedData = sessionStorage.getItem('legalAnalysisData');
+      if (storedData) {
+        console.log('💾 LegalAnalysisEditor: Found stored data:', storedData);
+
+        try {
+          const parsedData = JSON.parse(storedData);
+          console.log('📋 LegalAnalysisEditor: Parsed data:', parsedData);
+
+          if (
+            parsedData.analysisResult &&
+            parsedData.fileUrl &&
+            parsedData.fileName
+          ) {
+            setLegalData(parsedData);
+            setEditableIssues(parsedData.analysisResult.issues);
+            setFileUrl(parsedData.fileUrl);
+
+            // Create a mock File object for the selectedFile state
+            const mockFile = new File([], parsedData.fileName, {
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+            setSelectedFile(mockFile);
+
+            console.log('✅ LegalAnalysisEditor: Data loaded successfully');
+            toast({
+              type: 'success',
+              description: `Analysis loaded. Found ${parsedData.analysisResult.issues.length} issues.`,
+            });
+
+            // Clear the sessionStorage after loading
+            try {
+              sessionStorage.removeItem('legalAnalysisData');
+            } catch (clearError) {
+              console.error(
+                '❌ LegalAnalysisEditor: Failed to clear sessionStorage:',
+                clearError,
+              );
+            }
+          } else {
+            console.error(
+              '❌ LegalAnalysisEditor: Invalid data structure in sessionStorage',
+            );
+          }
+        } catch (parseError) {
+          console.error(
+            '❌ LegalAnalysisEditor: Failed to parse stored data:',
+            parseError,
+          );
+        }
+      } else {
+        console.log('📭 LegalAnalysisEditor: No data found in sessionStorage');
+      }
+    } catch (error) {
+      console.error(
+        '❌ LegalAnalysisEditor: Error loading data from sessionStorage:',
+        error,
+      );
+    }
+  }, []);
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -73,7 +144,10 @@ export default function LegalAnalysisEditorPage() {
 
     // Check if it's a supported file type
     if (!file.name.toLowerCase().endsWith('.docx')) {
-      toast.error('Please select a .docx file');
+      toast({
+        type: 'error',
+        description: 'Please select a .docx file',
+      });
       return;
     }
 
@@ -96,10 +170,16 @@ export default function LegalAnalysisEditorPage() {
 
       const result = await response.json();
       setFileUrl(result.url);
-      toast.success('File uploaded successfully');
+      toast({
+        type: 'success',
+        description: 'File uploaded successfully',
+      });
     } catch (error) {
       console.error('Failed to upload file:', error);
-      toast.error('Failed to upload file. Please try again.');
+      toast({
+        type: 'error',
+        description: 'Failed to upload file. Please try again.',
+      });
     } finally {
       setUploading(false);
     }
@@ -107,7 +187,10 @@ export default function LegalAnalysisEditorPage() {
 
   const handleAnalyze = async () => {
     if (!selectedFile || !fileUrl) {
-      toast.error('Please upload a document first');
+      toast({
+        type: 'error',
+        description: 'Please upload a document first',
+      });
       return;
     }
 
@@ -117,140 +200,51 @@ export default function LegalAnalysisEditorPage() {
       console.log('🔍 Starting legal analysis for:', selectedFile.name);
       console.log('📄 File URL:', fileUrl);
 
-      // Call the analyze document API directly
-      const response = await fetch('/api/chat', {
+      // Use the direct analyze API instead of the chat API
+      const response = await fetch('/api/document/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: generateUUID(),
-          message: {
-            id: generateUUID(),
-            createdAt: new Date(),
-            role: 'user',
-            content: `Please analyze this document for legal issues: ${selectedFile.name}`,
-            parts: [
-              {
-                type: 'text',
-                text: `Please analyze this document for legal issues: ${selectedFile.name}`,
-              },
-            ],
-            experimental_attachments: [
-              {
-                url: fileUrl,
-                name: selectedFile.name,
-                contentType:
-                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-              },
-            ],
-          },
-          selectedChatModel: 'gpt-4',
-          selectedVisibilityType: 'private',
+          fileUrl: fileUrl,
+          fileName: selectedFile.name,
+          fileType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          userMessage: 'Please analyze this document for legal issues',
+          analysisType: 'legal',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze document');
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Failed to analyze document: ${response.status}`);
       }
 
-      // For now, let's use a simpler approach to test the AI analysis
-      // The chat API returns a stream, but we'll handle it more carefully
-      console.log('📤 Response status:', response.status);
-      console.log('📤 Response headers:', response.headers);
+      const result = await response.json();
+      console.log('📋 Analysis result:', result);
 
-      // Read the response as text first to debug
-      const responseText = await response.text();
-      console.log('📤 Full response text:', responseText);
-
-      // Try to parse the response as JSON
-      let analysisData: LegalAnalysisResult | null = null;
-
-      try {
-        const responseJson = JSON.parse(responseText);
-        console.log('📋 Parsed response:', responseJson);
-
-        if (responseJson.analysisResult) {
-          analysisData = responseJson.analysisResult;
-        }
-      } catch (e) {
-        console.log('📋 Response is not JSON, trying to parse as stream...');
-
-        // Try to parse as stream data
-        const lines = responseText.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') break;
-
-            try {
-              const parsed = JSON.parse(data);
-              console.log('📋 Stream data:', parsed);
-
-              if (
-                parsed.type === 'redirect-to-json-editor' &&
-                parsed.content?.analysisResult
-              ) {
-                console.log(
-                  '📋 Found analysis data:',
-                  parsed.content.analysisResult,
-                );
-                analysisData = parsed.content.analysisResult;
-                break;
-              }
-            } catch (e) {
-              // Ignore JSON parse errors for non-JSON data
-            }
-          }
-        }
-      }
-
-      if (!analysisData) {
-        console.error('❌ No analysis data found in response');
-        console.log('🔄 Falling back to direct API call...');
-
-        // Try a direct call to the analyzeDocument tool
-        const directResponse = await fetch('/api/document/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fileUrl: fileUrl,
-            fileName: selectedFile.name,
-            fileType:
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            userMessage: 'Please analyze this document for legal issues',
-            analysisType: 'legal',
-          }),
+      if (result.success && result.analysis) {
+        setLegalData({
+          analysisResult: result.analysis,
+          fileUrl: fileUrl,
+          fileName: selectedFile.name,
         });
-
-        if (directResponse.ok) {
-          const directResult = await directResponse.json();
-          console.log('📋 Direct API result:', directResult);
-
-          if (directResult.analysis) {
-            analysisData = directResult.analysis;
-          } else {
-            throw new Error('No analysis data from direct API call');
-          }
-        } else {
-          throw new Error('Direct API call failed');
-        }
+        setEditableIssues(result.analysis.issues);
+        toast({
+          type: 'success',
+          description: `Analysis completed. Found ${result.analysis.issues.length} issues.`,
+        });
+      } else {
+        throw new Error(result.error || 'No analysis data received');
       }
-
-      setLegalData({
-        analysisResult: analysisData,
-        fileUrl: fileUrl,
-        fileName: selectedFile.name,
-      });
-      setEditableIssues(analysisData.issues);
-      toast.success(
-        `Analysis completed. Found ${analysisData.issues.length} issues.`,
-      );
     } catch (error) {
       console.error('Failed to analyze document:', error);
-      toast.error('Failed to analyze document. Please try again.');
+      toast({
+        type: 'error',
+        description: 'Failed to analyze document. Please try again.',
+      });
     } finally {
       setAnalyzing(false);
     }
@@ -292,13 +286,19 @@ export default function LegalAnalysisEditorPage() {
       if (result.downloadUrl) {
         setDownloadUrl(result.downloadUrl);
         setDownloadFileName(result.downloadFileName);
-        toast.success(`Changes applied to issue ${issueId}!`);
+        toast({
+          type: 'success',
+          description: `Changes applied to issue ${issueId}!`,
+        });
       } else {
         throw new Error('No download URL received');
       }
     } catch (error) {
       console.error('Failed to apply issue changes:', error);
-      toast.error('Failed to apply changes to document');
+      toast({
+        type: 'error',
+        description: 'Failed to apply changes to document',
+      });
     } finally {
       setApplyingIssues((prev) => {
         const newSet = new Set(prev);
@@ -310,7 +310,10 @@ export default function LegalAnalysisEditorPage() {
 
   const handleApplyAllChanges = async () => {
     if (!editableIssues.length) {
-      toast.error('No issues to apply');
+      toast({
+        type: 'error',
+        description: 'No issues to apply',
+      });
       return;
     }
 
@@ -344,13 +347,19 @@ export default function LegalAnalysisEditorPage() {
       if (result.downloadUrl) {
         setDownloadUrl(result.downloadUrl);
         setDownloadFileName(result.downloadFileName);
-        toast.success(`Applied all ${editableIssues.length} changes!`);
+        toast({
+          type: 'success',
+          description: `Applied all ${editableIssues.length} changes!`,
+        });
       } else {
         throw new Error('No download URL received');
       }
     } catch (error) {
       console.error('Failed to apply all changes:', error);
-      toast.error('Failed to apply all changes to document');
+      toast({
+        type: 'error',
+        description: 'Failed to apply all changes to document',
+      });
     } finally {
       setApplyingIssues(new Set());
     }
