@@ -22,6 +22,14 @@ const legalAnalysisSchema = {
           original_text: { type: 'string' },
           recommended_text: { type: 'string' },
           comment: { type: 'string' },
+          position: {
+            type: 'object',
+            properties: {
+              start: { type: 'number' },
+              end: { type: 'number' },
+            },
+            required: ['start', 'end'],
+          },
         },
         required: [
           'id',
@@ -29,6 +37,7 @@ const legalAnalysisSchema = {
           'original_text',
           'recommended_text',
           'comment',
+          'position',
         ],
       },
     },
@@ -135,11 +144,21 @@ export const analyzeDocument = ({
         console.log('📄 Legal Analysis - Extracted Text:');
         console.log('Document Name:', documentName);
         console.log('Text Length:', extractedText.length, 'characters');
-        console.log('First 500 characters:', extractedText.substring(0, 500));
+        console.log('Full Extracted Text:');
+        console.log(extractedText);
 
         // Create the legal analysis prompt
 
-        const systemPrompt = `You are a legal document analysis API. Analyze the provided document for legal issues, inconsistencies, and areas for improvement. 
+        const systemPrompt = `You are a legal document analysis API. Analyze ONLY the actual text content provided in the document for legal issues, inconsistencies, and areas for improvement. 
+
+CRITICAL INSTRUCTIONS:
+- ONLY analyze the exact text provided in the document
+- DO NOT generate examples or hypothetical text
+- ONLY identify issues in the actual document content
+- If the document text is clear and legally sound, return an empty issues array
+- Each issue must reference EXACT text from the document
+
+IMPORTANT: For each issue, you MUST provide the character position (start and end) of the problematic text in the document. This is crucial for accurate editing.
 
 Focus on:
 - Legal terminology and accuracy
@@ -151,13 +170,20 @@ Focus on:
 
 Respond ONLY with valid JSON matching the specified schema.`;
 
-        const userPrompt = `Analyze this document and respond ONLY in JSON matching the schema: ${JSON.stringify(legalAnalysisSchema)}
+        const userPrompt = `Analyze ONLY the actual text content below and respond ONLY in JSON matching the schema: ${JSON.stringify(legalAnalysisSchema)}
 
 Document Name: ${documentName}
 Document Content:
 ${extractedText}
 
 ${userMessage ? `User Context: ${userMessage}` : ''}
+
+IMPORTANT: 
+- Only identify issues in the EXACT text provided above
+- Do not generate hypothetical examples
+- If the text is legally sound, return an empty issues array
+- For each issue, provide the EXACT character position (start and end) of the problematic text in the document content above
+- The position should be the character index where the problematic text begins and ends
 
 Provide a comprehensive legal analysis with specific issues, recommended text changes, and detailed comments explaining each issue.`;
 
@@ -203,6 +229,10 @@ Provide a comprehensive legal analysis with specific issues, recommended text ch
             original_text: string;
             recommended_text: string;
             comment: string;
+            position: {
+              start: number;
+              end: number;
+            };
           }>;
         };
 

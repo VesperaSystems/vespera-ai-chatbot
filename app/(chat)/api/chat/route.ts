@@ -305,7 +305,6 @@ export async function POST(request: Request) {
                   'createChart',
                   'analyzeDocument',
                   'extractDocumentText',
-                  'editDocument',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -320,7 +319,6 @@ export async function POST(request: Request) {
             createChart: createChart({ session, dataStream }),
             analyzeDocument: analyzeDocument({ session, dataStream }),
             extractDocumentText: extractDocumentText({ session, dataStream }),
-            editDocument: editDocument({ session, dataStream }),
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {

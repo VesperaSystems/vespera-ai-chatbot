@@ -9,6 +9,10 @@ type LegalAnalysisIssue = {
   original_text: string;
   recommended_text: string;
   comment: string;
+  position: {
+    start: number;
+    end: number;
+  };
 };
 
 export async function POST(request: NextRequest) {
@@ -19,31 +23,45 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { fileUrl, fileName, issue } = body;
+    const { fileUrl, fileName, issues } = body;
 
-    if (!fileUrl || !fileName || !issue) {
+    if (!fileUrl || !fileName || !issues || !Array.isArray(issues)) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 },
       );
     }
 
-    // Use the new editDocument function that applies tracked changes
+    console.log('🔧 Applying all issues to document:');
+    console.log('File URL:', fileUrl);
+    console.log('File Name:', fileName);
+    console.log('Issues count:', issues.length);
+
+    // Log each issue for debugging
+    issues.forEach((issue, index) => {
+      console.log(`Issue ${index + 1}:`);
+      console.log(`  Original: "${issue.original_text}"`);
+      console.log(`  Recommended: "${issue.recommended_text}"`);
+    });
+
+    // Use the editDocument function to apply all issues
     const result = await editDocument({
       fileUrl,
       fileName,
-      issues: [issue], // Pass the single issue as an array
+      issues: issues,
     });
+
+    console.log('✅ Document editing completed successfully');
 
     return NextResponse.json({
       success: true,
-      message: 'Document edited successfully with tracked changes',
+      message: `Document edited successfully with ${issues.length} tracked changes`,
       downloadUrl: result.downloadUrl,
       downloadFileName: result.downloadFileName,
-      issueApplied: issue.id,
+      issuesApplied: issues.length,
     });
   } catch (error) {
-    console.error('Error in document edit API:', error);
+    console.error('Error in document edit-all API:', error);
     return NextResponse.json(
       { error: 'Failed to edit document' },
       { status: 500 },

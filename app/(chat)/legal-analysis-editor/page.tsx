@@ -24,6 +24,10 @@ interface LegalAnalysisIssue {
   original_text: string;
   recommended_text: string;
   comment: string;
+  position: {
+    start: number;
+    end: number;
+  };
 }
 
 interface LegalAnalysisResult {
@@ -110,6 +114,9 @@ export default function LegalAnalysisEditorPage() {
     setAnalyzing(true);
 
     try {
+      console.log('🔍 Starting legal analysis for:', selectedFile.name);
+      console.log('📄 File URL:', fileUrl);
+
       // Call the analyze document API directly
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -147,44 +154,90 @@ export default function LegalAnalysisEditorPage() {
         throw new Error('Failed to analyze document');
       }
 
-      // The chat API returns a stream, so we need to handle it differently
-      // For now, let's simulate a successful analysis with sample data
-      // In a real implementation, you would parse the stream for analysis results
+      // For now, let's use a simpler approach to test the AI analysis
+      // The chat API returns a stream, but we'll handle it more carefully
+      console.log('📤 Response status:', response.status);
+      console.log('📤 Response headers:', response.headers);
 
-      // Simulate analysis data for testing
-      const analysisData: LegalAnalysisResult = {
-        document: selectedFile.name.replace('.docx', ''),
-        issues: [
-          {
-            id: 'issue-1',
-            type: 'ambiguous_language',
-            original_text: 'The party shall pay the amount.',
-            recommended_text:
-              'The party shall pay the amount of $X within 30 days of invoice receipt.',
-            comment:
-              "Original text is ambiguous as it doesn't specify the amount or payment terms.",
+      // Read the response as text first to debug
+      const responseText = await response.text();
+      console.log('📤 Full response text:', responseText);
+
+      // Try to parse the response as JSON
+      let analysisData: LegalAnalysisResult | null = null;
+
+      try {
+        const responseJson = JSON.parse(responseText);
+        console.log('📋 Parsed response:', responseJson);
+
+        if (responseJson.analysisResult) {
+          analysisData = responseJson.analysisResult;
+        }
+      } catch (e) {
+        console.log('📋 Response is not JSON, trying to parse as stream...');
+
+        // Try to parse as stream data
+        const lines = responseText.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(data);
+              console.log('📋 Stream data:', parsed);
+
+              if (
+                parsed.type === 'redirect-to-json-editor' &&
+                parsed.content?.analysisResult
+              ) {
+                console.log(
+                  '📋 Found analysis data:',
+                  parsed.content.analysisResult,
+                );
+                analysisData = parsed.content.analysisResult;
+                break;
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for non-JSON data
+            }
+          }
+        }
+      }
+
+      if (!analysisData) {
+        console.error('❌ No analysis data found in response');
+        console.log('🔄 Falling back to direct API call...');
+
+        // Try a direct call to the analyzeDocument tool
+        const directResponse = await fetch('/api/document/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          {
-            id: 'issue-2',
-            type: 'missing_termination_notice',
-            original_text:
-              'Either party may terminate this Agreement at any time with or without cause.',
-            recommended_text:
-              'Either party may terminate this Agreement with 30 days written notice, or immediately for cause as defined in Section 7.',
-            comment:
-              "The original clause lacks specific notice requirements and definition of 'cause,' which could lead to legal disputes.",
-          },
-        ],
-        metadata: {
-          fileName: selectedFile.name,
-          fileType:
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          charactersAnalyzed: 1500,
-          analysisTimestamp: new Date().toISOString(),
-          analysisType: 'legal',
-          issuesFound: 2,
-        },
-      };
+          body: JSON.stringify({
+            fileUrl: fileUrl,
+            fileName: selectedFile.name,
+            fileType:
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            userMessage: 'Please analyze this document for legal issues',
+            analysisType: 'legal',
+          }),
+        });
+
+        if (directResponse.ok) {
+          const directResult = await directResponse.json();
+          console.log('📋 Direct API result:', directResult);
+
+          if (directResult.analysis) {
+            analysisData = directResult.analysis;
+          } else {
+            throw new Error('No analysis data from direct API call');
+          }
+        } else {
+          throw new Error('Direct API call failed');
+        }
+      }
 
       setLegalData({
         analysisResult: analysisData,
@@ -210,6 +263,10 @@ export default function LegalAnalysisEditorPage() {
     setApplyingIssues((prev) => new Set(prev).add(issueId));
 
     try {
+      console.log('🔧 Applying issue:', issue);
+      console.log('📄 Original text:', issue.original_text);
+      console.log('📄 Recommended text:', issue.recommended_text);
+
       // Apply the changes to the document
       const response = await fetch('/api/document/edit', {
         method: 'POST',
@@ -224,15 +281,20 @@ export default function LegalAnalysisEditorPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to apply changes');
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Failed to apply changes: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log('📋 Edit result:', result);
 
       if (result.downloadUrl) {
         setDownloadUrl(result.downloadUrl);
         setDownloadFileName(result.downloadFileName);
         toast.success(`Changes applied to issue ${issueId}!`);
+      } else {
+        throw new Error('No download URL received');
       }
     } catch (error) {
       console.error('Failed to apply issue changes:', error);
@@ -243,6 +305,54 @@ export default function LegalAnalysisEditorPage() {
         newSet.delete(issueId);
         return newSet;
       });
+    }
+  };
+
+  const handleApplyAllChanges = async () => {
+    if (!editableIssues.length) {
+      toast.error('No issues to apply');
+      return;
+    }
+
+    setApplyingIssues(new Set(editableIssues.map((i) => i.id)));
+
+    try {
+      console.log('🔧 Applying all issues:', editableIssues.length);
+
+      // Apply all changes to the document
+      const response = await fetch('/api/document/edit-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileUrl: legalData?.fileUrl,
+          fileName: legalData?.fileName,
+          issues: editableIssues,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Failed to apply all changes: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('📋 Edit all result:', result);
+
+      if (result.downloadUrl) {
+        setDownloadUrl(result.downloadUrl);
+        setDownloadFileName(result.downloadFileName);
+        toast.success(`Applied all ${editableIssues.length} changes!`);
+      } else {
+        throw new Error('No download URL received');
+      }
+    } catch (error) {
+      console.error('Failed to apply all changes:', error);
+      toast.error('Failed to apply all changes to document');
+    } finally {
+      setApplyingIssues(new Set());
     }
   };
 
@@ -372,6 +482,25 @@ export default function LegalAnalysisEditorPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {editableIssues.length > 0 && (
+            <Button
+              onClick={handleApplyAllChanges}
+              disabled={applyingIssues.size > 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {applyingIssues.size > 0 ? (
+                <>
+                  <div className="animate-spin rounded-full size-4 border-b-2 border-white mr-2" />
+                  Applying All Changes...
+                </>
+              ) : (
+                <>
+                  <PlayIcon size={16} />
+                  <span className="ml-2">Apply All Changes</span>
+                </>
+              )}
+            </Button>
+          )}
           {downloadUrl && (
             <Button onClick={handleDownload} variant="outline">
               <DownloadIcon size={16} />
