@@ -241,7 +241,11 @@ export default function TenantsPage() {
 
       {tenants.length === 0 ? (
         <div className="text-center py-8">
-          <Building2 className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <div className="flex items-center gap-3">
+            <div className="size-12 bg-muted rounded-lg flex items-center justify-center">
+              <Building2 className="size-5" />
+            </div>
+          </div>
           <h3 className="text-lg font-medium mb-2">No Tenants Found</h3>
           <p className="text-muted-foreground">
             No organizations with multiple users found. Individual users are not
@@ -260,11 +264,17 @@ export default function TenantsPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Building2 className="h-5 w-5" />
-                      <span>{tenant.name}</span>
-                      <Badge className={getTenantTypeColor(tenant.tenantType)}>
-                        {tenant.tenantType}
-                      </Badge>
+                      <div className="size-12 bg-muted rounded-lg flex items-center justify-center">
+                        <Building2 className="size-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{tenant.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant.domain || 'No domain'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
                         className="bg-white text-red-600 border-red-200"
@@ -272,25 +282,16 @@ export default function TenantsPage() {
                         {tenant.users.length}{' '}
                         {tenant.users.length === 1 ? 'user' : 'users'}
                       </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleTenantExpansion(tenantKey)}
                       >
                         {isExpanded ? (
-                          <ChevronDownIcon className="h-4 w-4" />
+                          <ChevronDownIcon className="size-4" />
                         ) : (
-                          <ChevronRightIcon className="h-4 w-4" />
+                          <ChevronRightIcon className="size-4" />
                         )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditTenant(tenant)}
-                      >
-                        Edit
                       </Button>
                     </div>
                   </CardTitle>
@@ -373,7 +374,7 @@ export default function TenantsPage() {
                       {isExpanded && (
                         <div className="border-t pt-4">
                           <h4 className="font-medium mb-3 flex items-center gap-2">
-                            <Users className="h-4 w-4" />
+                            <Users className="size-4" />
                             Users ({tenant.users.length})
                           </h4>
                           <div className="space-y-2">
@@ -388,7 +389,7 @@ export default function TenantsPage() {
                                   </span>
                                   {user.isAdmin && (
                                     <Badge
-                                      variant="destructive"
+                                      variant="danger"
                                       className="bg-red-600 text-white"
                                     >
                                       Admin

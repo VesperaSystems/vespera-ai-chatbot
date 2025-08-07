@@ -49,7 +49,7 @@ export async function GET(request: Request) {
           };
         }
 
-        if (row.users.id) {
+        if (row.users?.id) {
           acc[tenantKey].users.push(row.users);
         }
 

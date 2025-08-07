@@ -76,7 +76,13 @@ export async function getUser(
       })
       .from(user)
       .leftJoin(tenant, eq(user.tenantId, tenant.id))
-      .where(eq(user.email, email));
+      .where(eq(user.email, email))
+      .then((rows) =>
+        rows.map((row) => ({
+          ...row,
+          tenant: row.tenant || undefined,
+        })),
+      );
   } catch (error) {
     console.error('Failed to get user from database');
     throw error;
