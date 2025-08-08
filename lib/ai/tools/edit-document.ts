@@ -97,20 +97,6 @@ async function createDocumentWithTrueTrackedChanges(
       await applySimpleTextReplacement(document, issues);
     }
 
-    // Add comments for all issues
-    await addCommentsToDocument(zipContent, issues);
-
-    // Link comments to text changes in the document
-    await linkCommentsToDocument(document, issues);
-
-    // Add test comment to header
-    await addTestCommentToHeader(document, zipContent);
-
-    // Update document relationships if comments were added
-    if (issues.length > 0) {
-      await updateDocumentRelationships(zipContent);
-    }
-
     // Convert back to XML with proper options
     const builder = new xml2js.Builder({
       renderOpts: {
@@ -383,125 +369,134 @@ async function applyTrackedChangeSpanningRuns(
     );
 
     const paragraphs = document['w:document']['w:body']['w:p'] || [];
+    const flatText: string[] = [];
+    const charMap: {
+      paragraphIndex: number;
+      runIndex: number;
+      charIndexInRun: number;
+      runText: string;
+    }[] = [];
 
-    // Find the paragraph containing the original text
     for (let pi = 0; pi < paragraphs.length; pi++) {
-      const paragraph = paragraphs[pi];
-      const runs = Array.isArray(paragraph['w:r'])
-        ? paragraph['w:r']
-        : [paragraph['w:r']];
-
-      // Check if this paragraph contains the original text
-      let paragraphText = '';
-      for (const run of runs) {
+      const p = paragraphs[pi];
+      const runs = Array.isArray(p['w:r']) ? p['w:r'] : [p['w:r']];
+      for (let ri = 0; ri < runs.length; ri++) {
+        const run = runs[ri];
         const textElement = run['w:t'];
         const text =
           typeof textElement === 'string' ? textElement : textElement?._ || '';
-        paragraphText += text;
+        for (let ci = 0; ci < text.length; ci++) {
+          flatText.push(text[ci]);
+          charMap.push({
+            paragraphIndex: pi,
+            runIndex: ri,
+            charIndexInRun: ci,
+            runText: text,
+          });
+        }
+      }
+    }
+
+    const docText = flatText.join('');
+    const start = docText.indexOf(issue.original_text);
+    if (start === -1) {
+      console.warn(`❌ Could not find "${issue.original_text}"`);
+      return false;
+    }
+    const end = start + issue.original_text.length;
+    const affected = charMap.slice(start, end);
+
+    if (affected.length === 0) {
+      console.warn('❌ No characters matched in charMap');
+      return false;
+    }
+
+    const first = affected[0];
+    const last = affected[affected.length - 1];
+    const para = paragraphs[first.paragraphIndex];
+    const runs = Array.isArray(para['w:r']) ? para['w:r'] : [para['w:r']];
+
+    const runSet = new Set(affected.map((c) => c.runIndex));
+    const newRunList = [];
+
+    for (let ri = 0; ri < runs.length; ri++) {
+      const run = runs[ri];
+      const textEl = run['w:t'];
+      const text = typeof textEl === 'string' ? textEl : textEl?._ || '';
+
+      const affectedChars = affected.filter((c) => c.runIndex === ri);
+
+      if (affectedChars.length === 0) {
+        newRunList.push(run);
+        continue;
       }
 
-      if (paragraphText.includes(issue.original_text)) {
-        console.log(
-          `✅ Found text in paragraph ${pi}: "${issue.original_text}"`,
-        );
-        console.log(`📄 Full paragraph text: "${paragraphText}"`);
+      const firstChar = affectedChars[0].charIndexInRun;
+      const lastChar = affectedChars[affectedChars.length - 1].charIndexInRun;
 
-        // Find the exact position of the text within the paragraph
-        const startPos = paragraphText.indexOf(issue.original_text);
-        const endPos = startPos + issue.original_text.length;
+      const beforeText = text.slice(0, firstChar);
+      const afterText = text.slice(lastChar + 1);
 
-        console.log(`📄 Text position: ${startPos} to ${endPos}`);
+      if (beforeText) {
+        newRunList.push({
+          'w:rPr': run['w:rPr'] || {},
+          'w:t': { $: { 'xml:space': 'preserve' }, _: beforeText },
+        });
+      }
 
-        // Find the run that contains the start of our target text
-        let currentPos = 0;
-        let targetRunIndex = -1;
-
-        for (let ri = 0; ri < runs.length; ri++) {
-          const run = runs[ri];
-          const textElement = run['w:t'];
-          const text =
-            typeof textElement === 'string'
-              ? textElement
-              : textElement?._ || '';
-
-          const runStart = currentPos;
-          const runEnd = currentPos + text.length;
-
-          // Check if this run contains the start of our target text
-          if (runStart <= startPos && runEnd > startPos) {
-            targetRunIndex = ri;
-            break;
-          }
-
-          currentPos += text.length;
-        }
-
-        if (targetRunIndex !== -1) {
-          console.log(`📄 Found target run at index ${targetRunIndex}`);
-
-          // Create the deletion element (original text marked as deleted with strikethrough)
-          const delElement = {
-            'w:del': {
-              $: {
-                'w:author': 'VesperaAI',
-                'w:date': new Date().toISOString(),
-                'w:id': '1',
-              },
-              'w:r': {
+      if (ri === first.runIndex) {
+        newRunList.push({
+          'w:del': {
+            $: {
+              'w:author': 'VesperaAI',
+              'w:date': new Date().toISOString(),
+              'w:id': '1',
+            },
+            'w:r': [
+              {
                 'w:rPr': {},
                 'w:t': {
                   $: { 'xml:space': 'preserve' },
                   _: issue.original_text,
                 },
               },
-            },
-          };
+            ],
+          },
+        });
 
-          // Create the insertion element (new text marked as inserted with underline)
-          const insElement = {
-            'w:ins': {
-              $: {
-                'w:author': 'VesperaAI',
-                'w:date': new Date().toISOString(),
-                'w:id': '2',
-              },
-              'w:r': {
+        newRunList.push({
+          'w:ins': {
+            $: {
+              'w:author': 'VesperaAI',
+              'w:date': new Date().toISOString(),
+              'w:id': '2',
+            },
+            'w:r': [
+              {
                 'w:rPr': {},
                 'w:t': {
                   $: { 'xml:space': 'preserve' },
                   _: issue.recommended_text,
                 },
               },
-            },
-          };
+            ],
+          },
+        });
+      }
 
-          // Replace the target run with deletion and insertion
-          const beforeRuns = runs.slice(0, targetRunIndex);
-          const afterRuns = runs.slice(targetRunIndex + 1);
-          const newRuns = [...beforeRuns, delElement, insElement, ...afterRuns];
-
-          // Update the paragraph with the new runs
-          paragraph['w:r'] = newRuns;
-
-          console.log(`📄 Replaced run ${targetRunIndex} with tracked changes`);
-          console.log(`📄 Original text (deleted): "${issue.original_text}"`);
-          console.log(`📄 New text (inserted): "${issue.recommended_text}"`);
-
-          console.log(
-            `✅ Successfully applied tracked change: deleted "${issue.original_text}" and inserted "${issue.recommended_text}"`,
-          );
-
-          return true;
-        }
+      if (afterText) {
+        newRunList.push({
+          'w:rPr': run['w:rPr'] || {},
+          'w:t': { $: { 'xml:space': 'preserve' }, _: afterText },
+        });
       }
     }
 
-    console.warn(
-      `❌ Original text not found in document: "${issue.original_text}"`,
-    );
-    return false;
+    para['w:r'] = newRunList;
+    console.log(`✅ Applied change spanning multiple runs.`);
+    return true;
   } catch (error) {
-    console.error('Error applying tracked change spanning runs:', error);
+    console.error('❌ Error applying change spanning runs:', error);
     return false;
   }
 }
@@ -748,318 +743,6 @@ async function applySimpleTextReplacement(
     console.log('✅ Simple text replacement completed with tracked changes');
   } catch (error) {
     console.error('Error applying simple text replacement:', error);
-  }
-}
-
-// Function to add comments to the document
-async function addCommentsToDocument(zip: JSZip, issues: LegalAnalysisIssue[]) {
-  try {
-    // Read or create comments.xml
-    const commentsXml = await zip.file('word/comments.xml')?.async('string');
-    let comments: any;
-
-    if (commentsXml) {
-      const parser = new xml2js.Parser({
-        explicitArray: false,
-        mergeAttrs: false,
-      });
-      comments = await parser.parseStringPromise(commentsXml);
-    } else {
-      // Create new comments structure with proper namespaces
-      comments = {
-        'w:comments': {
-          $: {
-            'xmlns:w':
-              'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
-          },
-          'w:comment': [],
-        },
-      };
-    }
-
-    // Add comments for each issue
-    for (let i = 0; i < issues.length; i++) {
-      const issue = issues[i];
-      const comment = {
-        $: {
-          'w:id': (i + 1).toString(),
-          'w:author': 'VesperaAI',
-          'w:date': new Date().toISOString(),
-        },
-        'w:p': {
-          'w:r': {
-            'w:t': {
-              $: { 'xml:space': 'preserve' },
-              _: `VesperaAI Legal Review - ${issue.type}: ${issue.comment}`,
-            },
-          },
-        },
-      };
-
-      comments['w:comments']['w:comment'].push(comment);
-    }
-
-    // Convert comments back to XML
-    const builder = new xml2js.Builder({
-      renderOpts: {
-        pretty: true,
-        indent: '  ',
-        newline: '\n',
-      },
-      xmldec: { version: '1.0', encoding: 'UTF-8' },
-    });
-    const updatedCommentsXml = builder.buildObject(comments);
-
-    // Add comments.xml to the ZIP
-    zip.file('word/comments.xml', updatedCommentsXml);
-  } catch (error) {
-    console.error('Error adding comments:', error);
-    throw error;
-  }
-}
-
-// Function to add test comment to header
-async function addTestCommentToHeader(document: any, zip: JSZip) {
-  try {
-    console.log('🔧 Adding test comment to header...');
-
-    // Find the header in the document
-    const body = document['w:document']['w:body'];
-    const paragraphs = body['w:p'] || [];
-
-    // Look for a paragraph that might be a header (contains "Employment Agreement")
-    for (const paragraph of paragraphs) {
-      const runs = Array.isArray(paragraph['w:r'])
-        ? paragraph['w:r']
-        : [paragraph['w:r']];
-
-      for (const run of runs) {
-        const textElement = run['w:t'];
-        const textContent =
-          typeof textElement === 'string' ? textElement : textElement?._;
-
-        if (textContent?.includes('Employment Agreement')) {
-          console.log('✅ Found header: "Employment Agreement"');
-
-          // Add comment reference to this run
-          run['w:commentRangeStart'] = {
-            $: {
-              'w:id': '999',
-            },
-          };
-
-          run['w:commentRangeEnd'] = {
-            $: {
-              'w:id': '999',
-            },
-          };
-
-          // Add the comment to comments.xml
-          await addCommentToComments(
-            zip,
-            '999',
-            'VesperaAI: This entire document has been reviewed and edited by AI for legal compliance and clarity.',
-          );
-
-          console.log('✅ Added test comment to header');
-          return;
-        }
-      }
-    }
-
-    console.log('⚠️ Could not find "Employment Agreement" header');
-  } catch (error) {
-    console.error('Error adding test comment to header:', error);
-  }
-}
-
-// Function to add a comment to comments.xml
-async function addCommentToComments(
-  zip: JSZip,
-  commentId: string,
-  commentText: string,
-) {
-  try {
-    // Read or create comments.xml
-    const commentsXml = await zip.file('word/comments.xml')?.async('string');
-    let comments: any;
-
-    if (commentsXml) {
-      const parser = new xml2js.Parser({
-        explicitArray: false,
-        mergeAttrs: false,
-      });
-      comments = await parser.parseStringPromise(commentsXml);
-    } else {
-      // Create new comments structure
-      comments = {
-        'w:comments': {
-          $: {
-            'xmlns:w':
-              'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
-          },
-          'w:comment': [],
-        },
-      };
-    }
-
-    // Add the comment
-    const comment = {
-      $: {
-        'w:id': commentId,
-        'w:author': 'VesperaAI',
-        'w:date': new Date().toISOString(),
-      },
-      'w:p': {
-        'w:r': {
-          'w:t': {
-            $: { 'xml:space': 'preserve' },
-            _: commentText,
-          },
-        },
-      },
-    };
-
-    comments['w:comments']['w:comment'].push(comment);
-
-    // Convert comments back to XML
-    const builder = new xml2js.Builder({
-      renderOpts: {
-        pretty: true,
-        indent: '  ',
-        newline: '\n',
-      },
-      xmldec: { version: '1.0', encoding: 'UTF-8' },
-    });
-    const updatedCommentsXml = builder.buildObject(comments);
-
-    // Add comments.xml to the ZIP
-    zip.file('word/comments.xml', updatedCommentsXml);
-    console.log('✅ Added comment to comments.xml');
-  } catch (error) {
-    console.error('Error adding comment to comments.xml:', error);
-  }
-}
-
-// Function to link comments to text changes in the document
-async function linkCommentsToDocument(
-  document: any,
-  issues: LegalAnalysisIssue[],
-) {
-  try {
-    console.log('🔗 Linking comments to document text...');
-    const body = document['w:document']['w:body'];
-    const paragraphs = body['w:p'] || [];
-
-    for (let issueIndex = 0; issueIndex < issues.length; issueIndex++) {
-      const issue = issues[issueIndex];
-      const commentId = (issueIndex + 1).toString();
-
-      // Find the paragraph containing the original text
-      for (const paragraph of paragraphs) {
-        const runs = Array.isArray(paragraph['w:r'])
-          ? paragraph['w:r']
-          : [paragraph['w:r']];
-
-        for (const run of runs) {
-          const textElement = run['w:t'];
-          const textContent =
-            typeof textElement === 'string' ? textElement : textElement?._;
-
-          if (textContent?.includes(issue.original_text)) {
-            console.log(
-              `🔗 Linking comment ${commentId} to text: "${issue.original_text}"`,
-            );
-
-            // Add comment reference to the run
-            if (!run['w:commentRangeStart']) {
-              run['w:commentRangeStart'] = {
-                $: {
-                  'w:id': commentId,
-                },
-              };
-            }
-
-            if (!run['w:commentRangeEnd']) {
-              run['w:commentRangeEnd'] = {
-                $: {
-                  'w:id': commentId,
-                },
-              };
-            }
-
-            break;
-          }
-        }
-      }
-    }
-    console.log('✅ Comments linked to document text');
-  } catch (error) {
-    console.error('Error linking comments to document:', error);
-  }
-}
-
-// Function to update document relationships to include comments
-async function updateDocumentRelationships(zip: JSZip) {
-  try {
-    // Read or create _rels/document.xml.rels
-    const relsXml = await zip
-      .file('word/_rels/document.xml.rels')
-      ?.async('string');
-    let relationships: any;
-
-    if (relsXml) {
-      const parser = new xml2js.Parser({
-        explicitArray: false,
-        mergeAttrs: false,
-      });
-      relationships = await parser.parseStringPromise(relsXml);
-    } else {
-      // Create new relationships structure
-      relationships = {
-        Relationships: {
-          $: {
-            xmlns:
-              'http://schemas.openxmlformats.org/package/2006/relationships',
-          },
-          Relationship: [],
-        },
-      };
-    }
-
-    // Check if comments relationship already exists
-    const relationshipsList = relationships.Relationships.Relationship;
-    const existingCommentRel = relationshipsList?.find(
-      (rel: any) => rel.$.Target === 'comments.xml',
-    );
-
-    if (!existingCommentRel) {
-      // Add comments relationship
-      const commentRelationship = {
-        $: {
-          Id: `rId${relationshipsList?.length + 1 || 1}`,
-          Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments',
-          Target: 'comments.xml',
-        },
-      };
-
-      if (!relationshipsList) {
-        relationships.Relationships.Relationship = [];
-      }
-      relationships.Relationships.Relationship.push(commentRelationship);
-    }
-
-    // Convert relationships back to XML
-    const builder = new xml2js.Builder({
-      renderOpts: { pretty: true, indent: '  ' },
-    });
-    const updatedRelsXml = builder.buildObject(relationships);
-
-    // Add relationships file to the ZIP
-    zip.file('word/_rels/document.xml.rels', updatedRelsXml);
-  } catch (error) {
-    console.error('Error updating document relationships:', error);
-    throw error;
   }
 }
 
