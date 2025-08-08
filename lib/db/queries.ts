@@ -29,12 +29,18 @@ import {
   stream,
   userMessageCounts,
   subscriptionTypes,
+  tenant,
+  type Tenant,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { getEntitlements } from '@/lib/ai/entitlements';
+import {
+  getDefaultSubscriptionTypeForUser,
+  getDefaultModelForUser,
+} from '@/lib/ai/models';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -44,20 +50,60 @@ import { getEntitlements } from '@/lib/ai/entitlements';
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
 
-export async function getUser(email: string): Promise<Array<User>> {
+export async function getUser(
+  email: string,
+): Promise<Array<User & { tenant?: Tenant }>> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    return await db
+      .select({
+        id: user.id,
+        email: user.email,
+        password: user.password,
+        isAdmin: user.isAdmin,
+        subscriptionType: user.subscriptionType,
+        tenantType: user.tenantType,
+        tenantId: user.tenantId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          domain: tenant.domain,
+          tenantType: tenant.tenantType,
+          createdAt: tenant.createdAt,
+          updatedAt: tenant.updatedAt,
+        },
+      })
+      .from(user)
+      .leftJoin(tenant, eq(user.tenantId, tenant.id))
+      .where(eq(user.email, email))
+      .then((rows) =>
+        rows.map((row) => ({
+          ...row,
+          tenant: row.tenant || undefined,
+        })),
+      );
   } catch (error) {
     console.error('Failed to get user from database');
     throw error;
   }
 }
 
-export async function createUser(email: string, password: string) {
+export async function createUser(
+  email: string,
+  password: string,
+  tenantType = 'quant',
+) {
   const hashedPassword = generateHashedPassword(password);
+  const subscriptionType = getDefaultSubscriptionTypeForUser(tenantType);
 
   try {
-    return await db.insert(user).values({ email, password: hashedPassword });
+    return await db.insert(user).values({
+      email,
+      password: hashedPassword,
+      tenantType,
+      subscriptionType,
+    });
   } catch (error) {
     console.error('Failed to create user in database');
     throw error;
@@ -85,21 +131,29 @@ export async function saveChat({
   title,
   visibility,
   model,
+  tenantType,
 }: {
   id: string;
   userId: string;
   title: string;
   visibility: VisibilityType;
   model: string;
+  tenantType?: string;
 }) {
   try {
+    // Use default model for legal users if no model is specified
+    const defaultModel = tenantType
+      ? getDefaultModelForUser(tenantType)
+      : 'chat-model';
+    const finalModel = model || defaultModel;
+
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
       userId,
       title,
       visibility,
-      model,
+      model: finalModel,
     });
   } catch (error) {
     console.error('Failed to save chat in database');
@@ -682,8 +736,50 @@ export async function checkUserMessageLimit(
 }
 
 export async function getAllSubscriptionTypes() {
-  return db
-    .select()
-    .from(subscriptionTypes)
-    .where(eq(subscriptionTypes.isActive, true));
+  try {
+    return await db
+      .select()
+      .from(subscriptionTypes)
+      .orderBy(asc(subscriptionTypes.id));
+  } catch (error) {
+    console.error('Failed to get all subscription types from database');
+    throw error;
+  }
+}
+
+export async function getAllTenants(): Promise<Array<Tenant>> {
+  try {
+    return await db.select().from(tenant).orderBy(asc(tenant.name));
+  } catch (error) {
+    console.error('Failed to get tenants from database');
+    throw error;
+  }
+}
+
+export async function getTenantById(id: string): Promise<Tenant | null> {
+  try {
+    const result = await db.select().from(tenant).where(eq(tenant.id, id));
+    return result[0] || null;
+  } catch (error) {
+    console.error('Failed to get tenant from database');
+    throw error;
+  }
+}
+
+export async function updateUserTenant({
+  userId,
+  tenantId,
+}: {
+  userId: string;
+  tenantId: string;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({ tenantId, updatedAt: new Date() })
+      .where(eq(user.id, userId));
+  } catch (error) {
+    console.error('Failed to update user tenant in database');
+    throw error;
+  }
 }

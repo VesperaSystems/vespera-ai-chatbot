@@ -1,10 +1,10 @@
 import { auth } from '@/app/(auth)/auth';
 import { db } from '@/lib/db';
-import { user } from '@/lib/db/schema';
+import { user, tenant } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth();
 
@@ -12,7 +12,31 @@ export async function GET() {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const users = await db.select().from(user);
+    const { searchParams } = new URL(request.url);
+    const showAll = searchParams.get('all') === 'true';
+
+    // Get users with tenant information
+    const users = await db
+      .select({
+        id: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        subscriptionType: user.subscriptionType,
+        tenantType: user.tenantType,
+        tenantId: user.tenantId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          domain: tenant.domain,
+          tenantType: tenant.tenantType,
+          createdAt: tenant.createdAt,
+          updatedAt: tenant.updatedAt,
+        },
+      })
+      .from(user)
+      .leftJoin(tenant, eq(user.tenantId, tenant.id));
 
     return NextResponse.json({ users });
   } catch (error) {
@@ -37,6 +61,7 @@ export async function PATCH(request: Request) {
       organizationName,
       tenantType,
       organizationDomain,
+      tenantId,
     } = body;
 
     if (!userId) {
@@ -44,7 +69,12 @@ export async function PATCH(request: Request) {
     }
 
     // Log the update request for debugging
-    console.log('Updating user:', { userId, isAdmin, subscriptionType });
+    console.log('Updating user:', {
+      userId,
+      isAdmin,
+      subscriptionType,
+      tenantId,
+    });
 
     const updateData: any = {};
     if (typeof isAdmin === 'boolean') {
@@ -53,14 +83,11 @@ export async function PATCH(request: Request) {
     if (typeof subscriptionType === 'number') {
       updateData.subscriptionType = subscriptionType;
     }
-    if (organizationName !== undefined) {
-      updateData.organizationName = organizationName || null;
-    }
     if (tenantType !== undefined) {
       updateData.tenantType = tenantType || 'quant';
     }
-    if (organizationDomain !== undefined) {
-      updateData.organizationDomain = organizationDomain || null;
+    if (tenantId !== undefined) {
+      updateData.tenantId = tenantId || null;
     }
 
     // Log the update data for debugging

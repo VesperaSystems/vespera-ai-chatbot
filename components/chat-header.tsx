@@ -1,19 +1,26 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useWindowSize } from 'usehooks-ts';
-import { useEffect, useState, memo } from 'react';
-
-import { ModelSelector } from '@/components/model-selector';
-import { SidebarToggle } from '@/components/sidebar-toggle';
-import { Button } from '@/components/ui/button';
-import { PlusIcon } from './icons';
-import { useSidebar } from './ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType, VisibilitySelector } from './visibility-selector';
-import { MessageCounter } from './message-counter';
-import { FeedbackButton } from '@/components/feedback-button';
-import { ShareButton } from '@/components/share-button';
+import type { Attachment } from 'ai';
 import type { Session } from 'next-auth';
+import { memo, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { SidebarToggle } from '@/components/sidebar-toggle';
+import { ModelSelector } from '@/components/model-selector';
+import {
+  VisibilitySelector,
+  type VisibilityType,
+} from '@/components/visibility-selector';
+import { MessageCounter } from '@/components/message-counter';
+import { ShareButton } from '@/components/share-button';
+import { FeedbackButton } from '@/components/feedback-button';
+import { PlusIcon, FileIcon } from '@/components/icons';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useWindowSize } from 'usehooks-ts';
 
 function PureChatHeader({
   chatId,
@@ -22,6 +29,7 @@ function PureChatHeader({
   isReadonly,
   session,
   onModelChange,
+  attachments = [],
 }: {
   chatId: string;
   selectedModelId: string;
@@ -29,6 +37,7 @@ function PureChatHeader({
   isReadonly: boolean;
   session: Session;
   onModelChange?: (modelId: string) => void;
+  attachments?: Array<Attachment>;
 }) {
   const router = useRouter();
   const { open } = useSidebar();
@@ -40,6 +49,7 @@ function PureChatHeader({
   }, []);
 
   const showNewChatButton = mounted && (windowWidth >= 768 || !open);
+  const isLegalTenant = (session as any)?.user?.tenantType === 'legal';
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -82,13 +92,24 @@ function PureChatHeader({
         />
       )}
 
+      {!isReadonly && isLegalTenant && (
+        <Button
+          variant="outline"
+          className="hidden md:flex order-1 md:order-4 md:px-2 md:h-[34px]"
+          onClick={() => router.push('/legal-analysis-editor')}
+        >
+          <FileIcon />
+          Legal
+        </Button>
+      )}
+
       {!isReadonly && (
-        <div className="order-1 md:order-4">
+        <div className="order-1 md:order-5">
           <MessageCounter />
         </div>
       )}
 
-      <div className="order-1 md:order-5">
+      <div className="order-1 md:order-6">
         <ShareButton
           chatId={chatId}
           visibilityType={selectedVisibilityType}
@@ -97,7 +118,7 @@ function PureChatHeader({
       </div>
 
       {!isReadonly && (
-        <div className="order-1 md:order-6">
+        <div className="order-1 md:order-7">
           <FeedbackButton />
         </div>
       )}

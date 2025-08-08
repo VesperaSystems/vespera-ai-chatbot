@@ -13,107 +13,213 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/toast';
+import {
+  Building2,
+  Users,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from 'lucide-react';
 
-interface User {
+interface TenantUser {
   id: string;
   email: string;
-  organizationName?: string;
-  tenantType: string;
-  organizationDomain?: string;
-  subscriptionType: number;
   isAdmin: boolean;
+  subscriptionType: number;
+  tenantType: string;
+}
+
+interface Tenant {
+  id: string;
+  name: string;
+  domain: string | null;
+  tenantType: string;
+  createdAt: Date;
+  updatedAt: Date;
+  users: TenantUser[];
 }
 
 export default function TenantsPage() {
   const { data: session } = useSession();
-  const [users, setUsers] = useState<User[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [expandedTenants, setExpandedTenants] = useState<Set<string>>(
+    new Set(),
+  );
+  const [editingTenant, setEditingTenant] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
-    organizationName: '',
+    name: '',
     tenantType: 'quant',
-    organizationDomain: '',
+    domain: '',
   });
 
   useEffect(() => {
-    fetchUsers();
+    fetchTenants();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchTenants = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch('/api/admin/tenants');
       if (response.ok) {
         const data = await response.json();
-        setUsers(data.users);
+        setTenants(data.tenants);
       } else {
         toast({
           type: 'error',
-          description: 'Failed to fetch users',
+          description: 'Failed to fetch tenants',
         });
       }
     } catch (error) {
       toast({
         type: 'error',
-        description: 'Error fetching users',
+        description: 'Error fetching tenants',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (user: User) => {
-    setEditingUser(user.id);
+  const toggleTenantExpansion = (tenantKey: string) => {
+    const newExpanded = new Set(expandedTenants);
+    if (newExpanded.has(tenantKey)) {
+      newExpanded.delete(tenantKey);
+    } else {
+      newExpanded.add(tenantKey);
+    }
+    setExpandedTenants(newExpanded);
+  };
+
+  const handleEditTenant = (tenant: Tenant) => {
+    setEditingTenant(tenant.name);
     setEditForm({
-      organizationName: user.organizationName || '',
-      tenantType: user.tenantType || 'quant',
-      organizationDomain: user.organizationDomain || '',
+      name: tenant.name,
+      tenantType: tenant.tenantType,
+      domain: tenant.domain || '',
     });
   };
 
-  const handleSave = async (userId: string) => {
+  const handleSaveTenant = async (tenant: Tenant) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/admin/tenants`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify({
+          tenantId: tenant.id,
+          name: editForm.name,
+          domain: editForm.domain,
+          tenantType: editForm.tenantType,
+        }),
       });
 
       if (response.ok) {
         toast({
           type: 'success',
-          description: 'User updated successfully',
+          description: 'Tenant updated successfully',
         });
-        setEditingUser(null);
-        fetchUsers();
+        setEditingTenant(null);
+        fetchTenants(); // Refresh the list
       } else {
         toast({
           type: 'error',
-          description: 'Failed to update user',
+          description: 'Failed to update tenant',
         });
       }
     } catch (error) {
       toast({
         type: 'error',
-        description: 'Error updating user',
+        description: 'Error updating tenant',
       });
     }
   };
 
   const handleCancel = () => {
-    setEditingUser(null);
+    setEditingTenant(null);
   };
 
   const getTenantTypeColor = (tenantType: string) => {
-    switch (tenantType.toLowerCase()) {
+    switch (tenantType) {
       case 'legal':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-600 text-white';
       case 'quant':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-600 text-white';
+      case 'finance':
+        return 'bg-purple-600 text-white';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-600 text-white';
+    }
+  };
+
+  const getSubscriptionTypeName = (type: number) => {
+    switch (type) {
+      case 1:
+        return 'Regular';
+      case 2:
+        return 'Premium';
+      case 3:
+        return 'Enterprise';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const handleMoveUser = async (userId: string, currentTenantId: string) => {
+    try {
+      // Get all tenants for the dropdown
+      const response = await fetch('/api/admin/tenants');
+      if (!response.ok) {
+        toast({
+          type: 'error',
+          description: 'Failed to fetch tenants',
+        });
+        return;
+      }
+
+      const data = await response.json();
+      const availableTenants = data.tenants.filter(
+        (t: Tenant) => t.id !== currentTenantId,
+      );
+
+      // For now, we'll move to the first available tenant
+      // In a real implementation, you'd show a modal with tenant selection
+      if (availableTenants.length > 0) {
+        const targetTenant = availableTenants[0];
+
+        const moveResponse = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tenantId: targetTenant.id,
+          }),
+        });
+
+        if (moveResponse.ok) {
+          toast({
+            type: 'success',
+            description: `User moved to ${targetTenant.name}`,
+          });
+          fetchTenants(); // Refresh the list
+        } else {
+          toast({
+            type: 'error',
+            description: 'Failed to move user',
+          });
+        }
+      } else {
+        toast({
+          type: 'error',
+          description: 'No other tenants available',
+        });
+      }
+    } catch (error) {
+      toast({
+        type: 'error',
+        description: 'Error moving user',
+      });
     }
   };
 
@@ -129,105 +235,202 @@ export default function TenantsPage() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Tenant Management</h1>
+      <p className="text-muted-foreground mb-6">
+        Manage organization tenants and their associated users.
+      </p>
 
-      <div className="grid gap-6">
-        {users.map((user) => (
-          <Card key={user.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{user.email}</span>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getTenantTypeColor(user.tenantType)}`}
-                >
-                  {user.tenantType}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {editingUser === user.id ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="organizationName">Organization Name</Label>
-                    <Input
-                      id="organizationName"
-                      value={editForm.organizationName}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          organizationName: e.target.value,
-                        })
-                      }
-                      placeholder="Enter organization name"
-                    />
-                  </div>
+      {tenants.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="flex items-center gap-3">
+            <div className="size-12 bg-muted rounded-lg flex items-center justify-center">
+              <Building2 className="size-5" />
+            </div>
+          </div>
+          <h3 className="text-lg font-medium mb-2">No Tenants Found</h3>
+          <p className="text-muted-foreground">
+            No organizations with multiple users found. Individual users are not
+            shown in tenant management.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {tenants.map((tenant) => {
+            const tenantKey = `${tenant.name}-${tenant.domain}-${tenant.tenantType}`;
+            const isEditing = editingTenant === tenant.name;
+            const isExpanded = expandedTenants.has(tenantKey);
 
-                  <div>
-                    <Label htmlFor="tenantType">Tenant Type</Label>
-                    <Select
-                      value={editForm.tenantType}
-                      onValueChange={(value) =>
-                        setEditForm({ ...editForm, tenantType: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quant">Quant</SelectItem>
-                        <SelectItem value="legal">Legal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            return (
+              <Card key={tenantKey}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="size-12 bg-muted rounded-lg flex items-center justify-center">
+                        <Building2 className="size-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{tenant.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant.domain || 'No domain'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-white text-red-600 border-red-200"
+                      >
+                        {tenant.users.length}{' '}
+                        {tenant.users.length === 1 ? 'user' : 'users'}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleTenantExpansion(tenantKey)}
+                      >
+                        {isExpanded ? (
+                          <ChevronDownIcon className="size-4" />
+                        ) : (
+                          <ChevronRightIcon className="size-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isEditing ? (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="organizationName">
+                          Organization Name
+                        </Label>
+                        <Input
+                          id="organizationName"
+                          value={editForm.name}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              name: e.target.value,
+                            })
+                          }
+                          placeholder="Enter organization name"
+                        />
+                      </div>
 
-                  <div>
-                    <Label htmlFor="organizationDomain">
-                      Organization Domain
-                    </Label>
-                    <Input
-                      id="organizationDomain"
-                      value={editForm.organizationDomain}
-                      onChange={(e) =>
-                        setEditForm({
-                          ...editForm,
-                          organizationDomain: e.target.value,
-                        })
-                      }
-                      placeholder="Enter organization domain"
-                    />
-                  </div>
+                      <div>
+                        <Label htmlFor="tenantType">Tenant Type</Label>
+                        <Select
+                          value={editForm.tenantType}
+                          onValueChange={(value) =>
+                            setEditForm({ ...editForm, tenantType: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="quant">Quant</SelectItem>
+                            <SelectItem value="legal">Legal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="flex gap-2">
-                    <Button onClick={() => handleSave(user.id)}>Save</Button>
-                    <Button variant="outline" onClick={handleCancel}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div>
-                    <strong>Organization:</strong>{' '}
-                    {user.organizationName || 'Not set'}
-                  </div>
-                  <div>
-                    <strong>Domain:</strong>{' '}
-                    {user.organizationDomain || 'Not set'}
-                  </div>
-                  <div>
-                    <strong>Subscription:</strong>{' '}
-                    {user.subscriptionType === 1
-                      ? 'Regular'
-                      : user.subscriptionType === 2
-                        ? 'Premium'
-                        : 'Enterprise'}
-                  </div>
-                  <Button onClick={() => handleEdit(user)}>Edit</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                      <div>
+                        <Label htmlFor="organizationDomain">
+                          Organization Domain
+                        </Label>
+                        <Input
+                          id="organizationDomain"
+                          value={editForm.domain}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              domain: e.target.value,
+                            })
+                          }
+                          placeholder="Enter organization domain"
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button onClick={() => handleSaveTenant(tenant)}>
+                          Save
+                        </Button>
+                        <Button variant="outline" onClick={handleCancel}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <strong>Domain:</strong> {tenant.domain || 'Not set'}
+                        </div>
+                        <div>
+                          <strong>Type:</strong> {tenant.tenantType}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2">
+                            <Users className="size-4" />
+                            Users ({tenant.users.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {tenant.users.map((user) => (
+                              <div
+                                key={user.id}
+                                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium">
+                                    {user.email}
+                                  </span>
+                                  {user.isAdmin && (
+                                    <Badge
+                                      variant="danger"
+                                      className="bg-red-600 text-white"
+                                    >
+                                      Admin
+                                    </Badge>
+                                  )}
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-white text-gray-700 border-gray-300"
+                                  >
+                                    {getSubscriptionTypeName(
+                                      user.subscriptionType,
+                                    )}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleMoveUser(user.id, tenant.id)
+                                  }
+                                >
+                                  Move
+                                </Button>
+                              </div>
+                            ))}
+                            {tenant.users.length === 0 && (
+                              <div className="text-center text-gray-500 py-4">
+                                No users in this tenant
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

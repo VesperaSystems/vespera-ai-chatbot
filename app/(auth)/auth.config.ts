@@ -17,6 +17,14 @@ type ExtendedUser = {
   organizationName?: string;
   tenantType: string;
   organizationDomain?: string;
+  tenant?: {
+    id: string;
+    name: string;
+    domain: string | null;
+    tenantType: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
 };
 
 declare module 'next-auth' {
@@ -92,9 +100,7 @@ export const authConfig = {
           email: user.email,
           subscriptionType: validSubscriptionType,
           isAdmin: user.isAdmin,
-          tenantType: user.tenantType || 'quant',
-          organizationName: user.organizationName || undefined,
-          organizationDomain: user.organizationDomain || undefined,
+          tenantType: 'quant', // Default tenant type
         };
       },
     }),

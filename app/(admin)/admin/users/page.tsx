@@ -22,6 +22,13 @@ interface User {
   organizationDomain?: string;
   subscriptionType: number;
   isAdmin: boolean;
+  tenantId?: string;
+  tenant?: {
+    id: string;
+    name: string;
+    domain: string | null;
+    tenantType: string;
+  };
 }
 
 export default function UsersPage() {
@@ -32,15 +39,33 @@ export default function UsersPage() {
   const [editForm, setEditForm] = useState({
     isAdmin: false,
     subscriptionType: 1,
+    tenantId: '',
   });
+
+  const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>(
+    [],
+  );
 
   useEffect(() => {
     fetchUsers();
+    fetchTenants();
   }, []);
+
+  const fetchTenants = async () => {
+    try {
+      const response = await fetch('/api/admin/tenants');
+      if (response.ok) {
+        const data = await response.json();
+        setTenants(data.tenants.map((t: any) => ({ id: t.id, name: t.name })));
+      }
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users');
+      const response = await fetch('/api/admin/users?all=true');
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -65,6 +90,7 @@ export default function UsersPage() {
     setEditForm({
       isAdmin: user.isAdmin,
       subscriptionType: user.subscriptionType,
+      tenantId: user.tenantId || '',
     });
   };
 
@@ -118,6 +144,10 @@ export default function UsersPage() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
+      <p className="text-muted-foreground mb-6">
+        Manage all users in the system. This includes individual users and
+        organization members.
+      </p>
 
       <div className="grid gap-6">
         {users.map((user) => (
@@ -128,8 +158,8 @@ export default function UsersPage() {
                 <span
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
                     user.isAdmin
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-white text-red-600 border border-red-200'
+                      : 'bg-white text-gray-700 border border-gray-300'
                   }`}
                 >
                   {user.isAdmin ? 'Admin' : 'User'}
@@ -182,6 +212,30 @@ export default function UsersPage() {
                     </Select>
                   </div>
 
+                  <div>
+                    <Label htmlFor="tenantId">Tenant</Label>
+                    <Select
+                      value={editForm.tenantId}
+                      onValueChange={(value) =>
+                        setEditForm({
+                          ...editForm,
+                          tenantId: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a tenant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {tenant.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="flex gap-2">
                     <Button onClick={() => handleSave(user.id)}>Save</Button>
                     <Button variant="outline" onClick={handleCancel}>
@@ -206,11 +260,11 @@ export default function UsersPage() {
                         : 'Enterprise'}
                   </div>
                   <div>
-                    <strong>Tenant Type:</strong> {user.tenantType}
+                    <strong>Tenant:</strong>{' '}
+                    {user.tenant?.name || 'Not assigned'}
                   </div>
                   <div>
-                    <strong>Organization:</strong>{' '}
-                    {user.organizationName || 'Not set'}
+                    <strong>Tenant Type:</strong> {user.tenantType}
                   </div>
                   <Button onClick={() => handleEdit(user)}>Edit</Button>
                 </div>

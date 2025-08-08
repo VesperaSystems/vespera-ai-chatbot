@@ -2,7 +2,13 @@
 
 import type { Message } from 'ai';
 import { Button } from './ui/button';
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Textarea } from './ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
 import type { UseChatHelpers } from '@ai-sdk/react';
@@ -71,29 +77,57 @@ export function MessageEditor({
           onClick={async () => {
             setIsSubmitting(true);
 
-            await deleteTrailingMessages({
-              id: message.id,
-            });
+            try {
+              await deleteTrailingMessages({
+                id: message.id,
+              });
 
-            // @ts-expect-error todo: support UIMessage in setMessages
-            setMessages((messages) => {
-              const index = messages.findIndex((m) => m.id === message.id);
+              // @ts-expect-error todo: support UIMessage in setMessages
+              setMessages((messages) => {
+                const index = messages.findIndex((m) => m.id === message.id);
 
-              if (index !== -1) {
-                const updatedMessage = {
-                  ...message,
-                  content: draftContent,
-                  parts: [{ type: 'text', text: draftContent }],
-                };
+                if (index !== -1) {
+                  const updatedMessage = {
+                    ...message,
+                    content: draftContent,
+                    parts: [{ type: 'text', text: draftContent }],
+                  };
 
-                return [...messages.slice(0, index), updatedMessage];
-              }
+                  return [...messages.slice(0, index), updatedMessage];
+                }
 
-              return messages;
-            });
+                return messages;
+              });
 
-            setMode('view');
-            reload();
+              setMode('view');
+              reload();
+            } catch (error) {
+              console.error('Error updating message:', error);
+              // Don't throw the error to the user, just log it
+              // The message update can still proceed even if trailing messages couldn't be deleted
+
+              // @ts-expect-error todo: support UIMessage in setMessages
+              setMessages((messages) => {
+                const index = messages.findIndex((m) => m.id === message.id);
+
+                if (index !== -1) {
+                  const updatedMessage = {
+                    ...message,
+                    content: draftContent,
+                    parts: [{ type: 'text', text: draftContent }],
+                  };
+
+                  return [...messages.slice(0, index), updatedMessage];
+                }
+
+                return messages;
+              });
+
+              setMode('view');
+              reload();
+            } finally {
+              setIsSubmitting(false);
+            }
           }}
         >
           {isSubmitting ? 'Sending...' : 'Send'}

@@ -72,12 +72,25 @@ export function Chat({
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
-    experimental_prepareRequestBody: (body) => ({
-      id,
-      message: body.messages.at(-1),
-      selectedChatModel: selectedModelId,
-      selectedVisibilityType: visibilityType,
-    }),
+    experimental_prepareRequestBody: (body) => {
+      const lastMessage = body.messages.at(-1);
+      const requestBody = {
+        id,
+        message: {
+          ...lastMessage,
+          experimental_attachments: lastMessage?.experimental_attachments || [],
+        },
+        selectedChatModel: selectedModelId,
+        selectedVisibilityType: visibilityType,
+      };
+
+      console.log(
+        '🔍 Request body being sent to /api/chat:',
+        JSON.stringify(requestBody, null, 2),
+      );
+
+      return requestBody;
+    },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
 
@@ -165,6 +178,7 @@ export function Chat({
           isReadonly={isReadonly}
           session={session}
           onModelChange={setSelectedModelId}
+          attachments={attachments}
         />
 
         <ReadOnlyBanner

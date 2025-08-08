@@ -22,12 +22,12 @@ const getFileIcon = (contentType: string, fileName: string) => {
     extension === 'docx' ||
     extension === 'doc'
   ) {
-    return <FileText className="w-8 h-8 text-blue-600" />;
+    return <FileText className="size-8 text-blue-600" />;
   }
 
   // PDF files
   if (contentType.includes('pdf') || extension === 'pdf') {
-    return <FileText className="w-8 h-8 text-red-600" />;
+    return <FileText className="size-8 text-red-600" />;
   }
 
   // Text files
@@ -36,7 +36,7 @@ const getFileIcon = (contentType: string, fileName: string) => {
     extension === 'txt' ||
     extension === 'md'
   ) {
-    return <FileText className="w-8 h-8 text-gray-600" />;
+    return <FileText className="size-8 text-gray-600" />;
   }
 
   // Code files
@@ -60,7 +60,7 @@ const getFileIcon = (contentType: string, fileName: string) => {
     extension === 'swift' ||
     extension === 'kt'
   ) {
-    return <FileCode className="w-8 h-8 text-green-600" />;
+    return <FileCode className="size-8 text-green-600" />;
   }
 
   // Spreadsheet files
@@ -70,16 +70,16 @@ const getFileIcon = (contentType: string, fileName: string) => {
     extension === 'xls' ||
     extension === 'csv'
   ) {
-    return <FileSpreadsheet className="w-8 h-8 text-green-600" />;
+    return <FileSpreadsheet className="size-8 text-green-600" />;
   }
 
   // Image files (fallback)
   if (contentType.startsWith('image')) {
-    return <FileImage className="w-8 h-8 text-purple-600" />;
+    return <FileImage className="size-8 text-purple-600" />;
   }
 
   // Default file icon
-  return <File className="w-8 h-8 text-gray-600" />;
+  return <File className="size-8 text-gray-600" />;
 };
 
 // Function to get file type label
@@ -197,7 +197,7 @@ export const PreviewAttachment = ({
             )
           ) : (
             <div className="flex flex-col items-center justify-center h-full p-1">
-              <File className="w-8 h-8 text-gray-600" />
+              <File className="size-8 text-gray-600" />
               <div className="text-xs text-muted-foreground mt-1 leading-tight">
                 Document
               </div>

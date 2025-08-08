@@ -15,21 +15,27 @@ export async function GET(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const chat = await getChatById({ id: chatId });
+  try {
+    const chat = await getChatById({ id: chatId });
 
-  if (!chat) {
-    return new Response('Chat not found', { status: 404 });
+    if (!chat) {
+      console.log(`Vote API: Chat not found for chatId: ${chatId}`);
+      return new Response('Chat not found', { status: 404 });
+    }
+
+    // Allow fetching votes for public chats by any authenticated user
+    // For private chats, only the owner can fetch votes
+    if (chat.visibility === 'private' && chat.userId !== session.user.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const votes = await getVotesByChatId({ id: chatId });
+
+    return Response.json(votes, { status: 200 });
+  } catch (error) {
+    console.error('Vote API error:', error);
+    return new Response('Internal server error', { status: 500 });
   }
-
-  // Allow fetching votes for public chats by any authenticated user
-  // For private chats, only the owner can fetch votes
-  if (chat.visibility === 'private' && chat.userId !== session.user.id) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const votes = await getVotesByChatId({ id: chatId });
-
-  return Response.json(votes, { status: 200 });
 }
 
 export async function PATCH(request: Request) {
