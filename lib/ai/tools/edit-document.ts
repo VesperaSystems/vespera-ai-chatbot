@@ -16,6 +16,34 @@ interface LegalAnalysisIssue {
   };
 }
 
+// Ensure /[Content_Types].xml has Override for comments.xml
+async function ensureCommentsContentType(zip: JSZip) {
+  try {
+    const contentTypesXml = await zip.file('[Content_Types].xml')?.async('string');
+    if (!contentTypesXml) return;
+
+    if (contentTypesXml.includes('comments.xml')) return; // already present
+
+    // Insert Override before closing </Types>
+    const insertion =
+      '<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>';
+    const updated = contentTypesXml.replace(/<\/Types>/, `${insertion}\n</Types>`);
+    zip.file('[Content_Types].xml', updated);
+    console.log('✅ Added comments.xml Override to [Content_Types].xml');
+  } catch (e) {
+    console.warn('⚠️ Failed ensuring comments content type', e);
+  }
+}
+
+// Post-build fix: remove <w:commentRangeStart/> & <w:commentRangeEnd/> incorrectly wrapped in <w:r>
+function liftCommentRangeMarkers(xml: string): string {
+  // Replace <w:r><w:commentRangeStart w:id="n"/></w:r> with <w:commentRangeStart w:id="n"/>
+  xml = xml.replace(/<w:r>\s*<w:commentRangeStart ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeStart $1/>');
+  // Replace <w:r><w:commentRangeEnd w:id="n"/></w:r> with <w:commentRangeEnd w:id="n"/>
+  xml = xml.replace(/<w:r>\s*<w:commentRangeEnd ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeEnd $1/>');
+  return xml;
+}
+
 // Function to create document with comments
 async function createDocumentWithComments(
   originalBuffer: ArrayBuffer,
@@ -85,7 +113,10 @@ async function createDocumentWithComments(
       xmldec: { version: '1.0', encoding: 'UTF-8' },
     });
 
-    const updatedDocumentXml = builder.buildObject(document);
+    let updatedDocumentXml = builder.buildObject(document);
+
+    // Structural fix: lift comment range markers out of runs so Word recognizes them
+    updatedDocumentXml = liftCommentRangeMarkers(updatedDocumentXml);
     console.log('📄 Updated document.xml length:', updatedDocumentXml.length);
 
     // Update the ZIP file with the properly structured XML
@@ -99,6 +130,8 @@ async function createDocumentWithComments(
 
       // Update document.xml.rels to include comments relationship
       await updateDocumentRels(zipContent);
+      // Ensure content types override exists
+      await ensureCommentsContentType(zipContent);
     }
 
     // Generate the new DOCX
@@ -171,6 +204,14 @@ async function updateDocumentRels(zip: JSZip) {
       };
     }
 
+    // Normalise to array
+    if (
+      rels.Relationships.Relationship &&
+      !Array.isArray(rels.Relationships.Relationship)
+    ) {
+      rels.Relationships.Relationship = [rels.Relationships.Relationship];
+    }
+
     // Check if comments relationship already exists
     const existingCommentsRel = rels.Relationships.Relationship?.find(
       (rel: any) => rel.$.Target === 'comments.xml',
@@ -182,9 +223,13 @@ async function updateDocumentRels(zip: JSZip) {
         rels.Relationships.Relationship = [];
       }
 
+      const newId = `rId${
+        (rels.Relationships.Relationship.length || 0) + 10
+      }`; // simple deterministic id
+
       const commentsRel = {
         $: {
-          Id: `rId${Date.now()}`,
+          Id: newId,
           Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments',
           Target: 'comments.xml',
         },
@@ -240,20 +285,17 @@ async function addCommentToDocument(
           console.log(`✅ Found text to comment: "${issue.original_text}"`);
           console.log(`📄 In document text: "${textContent}"`);
 
-          const commentId = Math.floor(Math.random() * 10000).toString();
-          const commentText = `VesperaAI has identified a ${issue.type} and suggests changing this line to: \"${issue.recommended_text}\"\n\n${issue.comment}`;
+            // Sequential comment id
+          const commentId = comments.length.toString();
+          const commentText = `VesperaAI has identified a ${issue.type} and suggests changing this line to: "${issue.recommended_text}"\n\n${issue.comment}`;
 
-          // Create comment range start
+          // Create comment range start / end placeholders (will be lifted later)
           const commentRangeStart = {
             'w:commentRangeStart': { $: { 'w:id': commentId } },
           };
-
-          // Create comment range end
           const commentRangeEnd = {
             'w:commentRangeEnd': { $: { 'w:id': commentId } },
           };
-
-          // Create comment reference
           const commentReference = {
             'w:r': {
               'w:rPr': {},
@@ -261,43 +303,27 @@ async function addCommentToDocument(
             },
           };
 
-          // Split the text around the original text
-          const beforeText = textContent.substring(
-            0,
-            textContent.indexOf(issue.original_text),
-          );
+          // Split text
+          const startIndex = textContent.indexOf(issue.original_text);
+          const beforeText = textContent.substring(0, startIndex);
           const afterText = textContent.substring(
-            textContent.indexOf(issue.original_text) +
-              issue.original_text.length,
+            startIndex + issue.original_text.length,
           );
 
-          // Create new runs array
-          const newRuns = [];
-
-          // Add text before the comment
+          const newRuns: any[] = [];
           if (beforeText) {
             newRuns.push({
               'w:rPr': run['w:rPr'] || {},
               'w:t': { $: { 'xml:space': 'preserve' }, _: beforeText },
             });
           }
-
-          // Add comment range start
           newRuns.push(commentRangeStart);
-
-          // Add the original text (this will be commented)
           newRuns.push({
             'w:rPr': run['w:rPr'] || {},
             'w:t': { $: { 'xml:space': 'preserve' }, _: issue.original_text },
           });
-
-          // Add comment range end
           newRuns.push(commentRangeEnd);
-
-          // Add comment reference
           newRuns.push(commentReference);
-
-          // Add text after the comment
           if (afterText) {
             newRuns.push({
               'w:rPr': run['w:rPr'] || {},
@@ -305,20 +331,17 @@ async function addCommentToDocument(
             });
           }
 
-          // Replace the original run with the new runs
           runs.splice(runIndex, 1, ...newRuns);
           paragraph['w:r'] = runs;
 
-          // Add comment to the comments array
           comments.push({
             $: {
               'w:author': 'VesperaAI',
-              'w:initials': 'VAI',
+              'w:initials': 'AI',
               'w:date': new Date().toISOString(),
               'w:id': commentId,
             },
             'w:p': {
-              'w:pPr': {},
               'w:r': {
                 'w:rPr': {},
                 'w:t': commentText,
