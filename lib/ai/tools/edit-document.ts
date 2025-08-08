@@ -37,11 +37,12 @@ async function ensureCommentsContentType(zip: JSZip) {
 
 // Post-build fix: remove <w:commentRangeStart/> & <w:commentRangeEnd/> incorrectly wrapped in <w:r>
 function liftCommentRangeMarkers(xml: string): string {
+  let result = xml;
   // Replace <w:r><w:commentRangeStart w:id="n"/></w:r> with <w:commentRangeStart w:id="n"/>
-  xml = xml.replace(/<w:r>\s*<w:commentRangeStart ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeStart $1/>');
+  result = result.replace(/<w:r>\s*<w:commentRangeStart ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeStart $1/>');
   // Replace <w:r><w:commentRangeEnd w:id="n"/></w:r> with <w:commentRangeEnd w:id="n"/>
-  xml = xml.replace(/<w:r>\s*<w:commentRangeEnd ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeEnd $1/>');
-  return xml;
+  result = result.replace(/<w:r>\s*<w:commentRangeEnd ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeEnd $1/>');
+  return result;
 }
 
 // Function to create document with comments
