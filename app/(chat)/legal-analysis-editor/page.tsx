@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,6 +58,7 @@ export default function LegalAnalysisEditorPage() {
     [],
   );
   const [applyingIssues, setApplyingIssues] = useState<Set<string>>(new Set());
+  const [appliedIssues, setAppliedIssues] = useState<Set<string>>(new Set());
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [downloadFileName, setDownloadFileName] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -261,8 +261,13 @@ export default function LegalAnalysisEditorPage() {
       console.log('📄 Original text:', issue.original_text);
       console.log('📄 Recommended text:', issue.recommended_text);
 
-      // Apply the changes to the document
-      const response = await fetch('/api/document/edit', {
+      // Get all issues that should be applied (including this one and any previously applied)
+      const issuesToApply = editableIssues.filter(
+        (i) => appliedIssues.has(i.id) || i.id === issueId,
+      );
+
+      // Apply all changes to the document at once
+      const response = await fetch('/api/document/edit-all', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +275,7 @@ export default function LegalAnalysisEditorPage() {
         body: JSON.stringify({
           fileUrl: legalData?.fileUrl,
           fileName: legalData?.fileName,
-          issue: issue,
+          issues: issuesToApply,
         }),
       });
 
@@ -286,6 +291,7 @@ export default function LegalAnalysisEditorPage() {
       if (result.downloadUrl) {
         setDownloadUrl(result.downloadUrl);
         setDownloadFileName(result.downloadFileName);
+        setAppliedIssues((prev) => new Set(prev).add(issueId));
         toast({
           type: 'success',
           description: `Changes applied to issue ${issueId}!`,
@@ -347,6 +353,8 @@ export default function LegalAnalysisEditorPage() {
       if (result.downloadUrl) {
         setDownloadUrl(result.downloadUrl);
         setDownloadFileName(result.downloadFileName);
+        // Mark all issues as applied
+        setAppliedIssues(new Set(editableIssues.map((issue) => issue.id)));
         toast({
           type: 'success',
           description: `Applied all ${editableIssues.length} changes!`,
@@ -432,24 +440,105 @@ export default function LegalAnalysisEditorPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label
-                htmlFor="file-upload"
-                className="block text-sm font-medium"
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload document"
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  uploading
+                    ? 'border-muted bg-muted/50'
+                    : 'border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/25'
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const files = Array.from(e.dataTransfer.files);
+                  if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.toLowerCase().endsWith('.docx')) {
+                      handleFileUpload({ target: { files: [file] } } as any);
+                    } else {
+                      toast({
+                        type: 'error',
+                        description: 'Please select a .docx file',
+                      });
+                    }
+                  }
+                }}
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.docx';
+                  input.onchange = (e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target.files && target.files.length > 0) {
+                      handleFileUpload({
+                        target: { files: target.files },
+                      } as any);
+                    }
+                  };
+                  input.click();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.docx';
+                    input.onchange = (e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target.files && target.files.length > 0) {
+                        handleFileUpload({
+                          target: { files: target.files },
+                        } as any);
+                      }
+                    };
+                    input.click();
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
               >
-                Select Document (.docx)
-              </label>
-              <Input
-                id="file-upload"
-                type="file"
-                accept=".docx"
-                onChange={handleFileUpload}
-                disabled={uploading}
-              />
-              {selectedFile && (
-                <p className="text-sm text-muted-foreground">
-                  Selected: {selectedFile.name}
-                </p>
-              )}
+                {uploading ? (
+                  <div className="space-y-4">
+                    <div className="animate-spin rounded-full size-8 border-b-2 border-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Uploading file...
+                    </p>
+                  </div>
+                ) : selectedFile ? (
+                  <div className="space-y-4">
+                    <div className="mx-auto text-primary">
+                      <FileIcon size={48} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Click or drop to change file
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="mx-auto text-muted-foreground">
+                      <UploadIcon size={48} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        Drop your .docx file here
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        or click to browse files
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Button
@@ -494,18 +583,32 @@ export default function LegalAnalysisEditorPage() {
           {editableIssues.length > 0 && (
             <Button
               onClick={handleApplyAllChanges}
-              disabled={applyingIssues.size > 0}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={
+                applyingIssues.size > 0 ||
+                appliedIssues.size === editableIssues.length
+              }
+              className={`${
+                applyingIssues.size > 0
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : appliedIssues.size === editableIssues.length
+                    ? 'bg-green-100 border-green-300 text-green-800'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
             >
               {applyingIssues.size > 0 ? (
                 <>
-                  <div className="animate-spin rounded-full size-4 border-b-2 border-white mr-2" />
-                  Applying All Changes...
+                  <div className="animate-spin rounded-full size-4 border-b-2 border-current mr-2" />
+                  Applying...
+                </>
+              ) : appliedIssues.size === editableIssues.length ? (
+                <>
+                  <div className="size-4 mr-2">✓</div>
+                  <span className="ml-2">All Applied</span>
                 </>
               ) : (
                 <>
                   <PlayIcon size={16} />
-                  <span className="ml-2">Apply All Changes</span>
+                  <span className="ml-2">Apply All</span>
                 </>
               )}
             </Button>
@@ -523,6 +626,7 @@ export default function LegalAnalysisEditorPage() {
               setSelectedFile(null);
               setFileUrl(null);
               setEditableIssues([]);
+              setAppliedIssues(new Set());
               setDownloadUrl(null);
               setDownloadFileName(null);
             }}
@@ -602,14 +706,28 @@ export default function LegalAnalysisEditorPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleApplyIssueChanges(issue.id)}
-                      disabled={applyingIssues.has(issue.id)}
+                      disabled={
+                        applyingIssues.has(issue.id) ||
+                        appliedIssues.has(issue.id)
+                      }
+                      className={
+                        applyingIssues.has(issue.id)
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : appliedIssues.has(issue.id)
+                            ? 'bg-green-100 border-green-300 text-green-800'
+                            : ''
+                      }
                     >
                       {applyingIssues.has(issue.id) ? (
                         <div className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      ) : appliedIssues.has(issue.id) ? (
+                        <div className="size-4 mr-2">✓</div>
                       ) : (
                         <PlayIcon size={16} />
                       )}
-                      <span className="ml-2">Apply Changes</span>
+                      <span className="ml-2">
+                        {appliedIssues.has(issue.id) ? 'Applied' : 'Apply'}
+                      </span>
                     </Button>
                   </div>
                 </CardHeader>

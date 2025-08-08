@@ -22,6 +22,12 @@ async function createDocumentWithTrueTrackedChanges(
   issues: LegalAnalysisIssue[],
   fileName: string,
 ): Promise<Buffer> {
+  console.log('🔧 Starting document editing with issues:', issues.length);
+  issues.forEach((issue, index) => {
+    console.log(
+      `Issue ${index + 1}: "${issue.original_text}" -> "${issue.recommended_text}"`,
+    );
+  });
   try {
     console.log('🔧 Creating document with true tracked changes...');
 
@@ -118,13 +124,12 @@ async function createDocumentWithTrueTrackedChanges(
     const updatedDocumentXml = builder.buildObject(document);
     console.log('📄 Updated document.xml length:', updatedDocumentXml.length);
 
-    // Ensure proper XML structure for tracked changes
-    const finalDocumentXml = updatedDocumentXml
-      .replace(/<w:del([^>]*)>/g, '<w:del$1><w:r><w:rPr/></w:r>')
-      .replace(/<w:ins([^>]*)>/g, '<w:ins$1><w:r><w:rPr/></w:r>');
+    // Debug: Log a sample of the XML to see the structure
+    const sampleXml = updatedDocumentXml.substring(0, 2000);
+    console.log('📄 Sample XML structure:', sampleXml);
 
-    // Update the ZIP file
-    zipContent.file('word/document.xml', finalDocumentXml);
+    // Update the ZIP file with the properly structured XML
+    zipContent.file('word/document.xml', updatedDocumentXml);
 
     // Generate the new DOCX
     const newDocxBuffer = await zipContent.generateAsync({
@@ -378,116 +383,123 @@ async function applyTrackedChangeSpanningRuns(
     );
 
     const paragraphs = document['w:document']['w:body']['w:p'] || [];
-    const flatText: string[] = [];
-    const runRefs: {
-      paragraphIndex: number;
-      runIndex: number;
-      offset: number;
-      length: number;
-    }[] = [];
 
-    // Step 1: Flatten document text and map each character to its run
+    // Find the paragraph containing the original text
     for (let pi = 0; pi < paragraphs.length; pi++) {
-      const p = paragraphs[pi];
-      const runs = Array.isArray(p['w:r']) ? p['w:r'] : [p['w:r']];
-      for (let ri = 0; ri < runs.length; ri++) {
-        const run = runs[ri];
+      const paragraph = paragraphs[pi];
+      const runs = Array.isArray(paragraph['w:r'])
+        ? paragraph['w:r']
+        : [paragraph['w:r']];
+
+      // Check if this paragraph contains the original text
+      let paragraphText = '';
+      for (const run of runs) {
         const textElement = run['w:t'];
         const text =
           typeof textElement === 'string' ? textElement : textElement?._ || '';
-        for (let i = 0; i < text.length; i++) {
-          flatText.push(text[i]);
-          runRefs.push({
-            paragraphIndex: pi,
-            runIndex: ri,
-            offset: i,
-            length: text.length,
-          });
+        paragraphText += text;
+      }
+
+      if (paragraphText.includes(issue.original_text)) {
+        console.log(
+          `✅ Found text in paragraph ${pi}: "${issue.original_text}"`,
+        );
+        console.log(`📄 Full paragraph text: "${paragraphText}"`);
+
+        // Find the exact position of the text within the paragraph
+        const startPos = paragraphText.indexOf(issue.original_text);
+        const endPos = startPos + issue.original_text.length;
+
+        console.log(`📄 Text position: ${startPos} to ${endPos}`);
+
+        // Find the run that contains the start of our target text
+        let currentPos = 0;
+        let targetRunIndex = -1;
+
+        for (let ri = 0; ri < runs.length; ri++) {
+          const run = runs[ri];
+          const textElement = run['w:t'];
+          const text =
+            typeof textElement === 'string'
+              ? textElement
+              : textElement?._ || '';
+
+          const runStart = currentPos;
+          const runEnd = currentPos + text.length;
+
+          // Check if this run contains the start of our target text
+          if (runStart <= startPos && runEnd > startPos) {
+            targetRunIndex = ri;
+            break;
+          }
+
+          currentPos += text.length;
+        }
+
+        if (targetRunIndex !== -1) {
+          console.log(`📄 Found target run at index ${targetRunIndex}`);
+
+          // Create the deletion element (original text marked as deleted with strikethrough)
+          const delElement = {
+            'w:del': {
+              $: {
+                'w:author': 'VesperaAI',
+                'w:date': new Date().toISOString(),
+                'w:id': '1',
+              },
+              'w:r': {
+                'w:rPr': {},
+                'w:t': {
+                  $: { 'xml:space': 'preserve' },
+                  _: issue.original_text,
+                },
+              },
+            },
+          };
+
+          // Create the insertion element (new text marked as inserted with underline)
+          const insElement = {
+            'w:ins': {
+              $: {
+                'w:author': 'VesperaAI',
+                'w:date': new Date().toISOString(),
+                'w:id': '2',
+              },
+              'w:r': {
+                'w:rPr': {},
+                'w:t': {
+                  $: { 'xml:space': 'preserve' },
+                  _: issue.recommended_text,
+                },
+              },
+            },
+          };
+
+          // Replace the target run with deletion and insertion
+          const beforeRuns = runs.slice(0, targetRunIndex);
+          const afterRuns = runs.slice(targetRunIndex + 1);
+          const newRuns = [...beforeRuns, delElement, insElement, ...afterRuns];
+
+          // Update the paragraph with the new runs
+          paragraph['w:r'] = newRuns;
+
+          console.log(`📄 Replaced run ${targetRunIndex} with tracked changes`);
+          console.log(`📄 Original text (deleted): "${issue.original_text}"`);
+          console.log(`📄 New text (inserted): "${issue.recommended_text}"`);
+
+          console.log(
+            `✅ Successfully applied tracked change: deleted "${issue.original_text}" and inserted "${issue.recommended_text}"`,
+          );
+
+          return true;
         }
       }
     }
 
-    const docString = flatText.join('');
-    const { original_text, recommended_text } = issue;
-    const startIndex = docString.indexOf(original_text);
-
-    if (startIndex === -1) {
-      console.warn(
-        `❌ Original text not found in document: "${original_text}"`,
-      );
-      console.log(`📄 Document text: "${docString}"`);
-      return false;
-    }
-
-    const endIndex = startIndex + original_text.length;
-    console.log(`✅ Found text at position ${startIndex}-${endIndex}`);
-
-    // Step 2: Replace the runs that span this index range with <w:del> and <w:ins>
-    const affected = runRefs.slice(startIndex, endIndex);
-
-    if (affected.length === 0) return false;
-
-    // Determine which paragraphs and runs are involved
-    const first = affected[0];
-    const last = affected[affected.length - 1];
-
-    const para = paragraphs[first.paragraphIndex];
-    const runs = Array.isArray(para['w:r']) ? para['w:r'] : [para['w:r']];
-
-    // Create <w:del>
-    const delTag = {
-      'w:del': {
-        $: {
-          'w:author': 'VesperaAI',
-          'w:date': new Date().toISOString(),
-          'w:id': '1',
-        },
-        'w:r': [
-          {
-            'w:rPr': {},
-            'w:t': {
-              $: { 'xml:space': 'preserve' },
-              _: original_text,
-            },
-          },
-        ],
-      },
-    };
-
-    // Create <w:ins>
-    const insTag = {
-      'w:ins': {
-        $: {
-          'w:author': 'VesperaAI',
-          'w:date': new Date().toISOString(),
-          'w:id': '2',
-        },
-        'w:r': [
-          {
-            'w:rPr': {},
-            'w:t': {
-              $: { 'xml:space': 'preserve' },
-              _: recommended_text,
-            },
-          },
-        ],
-      },
-    };
-
-    // Replace affected runs with deletion and insertion elements
-    const runIndices = [...new Set(affected.map((a) => a.runIndex))];
-    const firstRun = runIndices[0];
-    const lastRun = runIndices[runIndices.length - 1];
-    const before = runs.slice(0, firstRun);
-    const after = runs.slice(lastRun + 1);
-
-    const newRuns = [...before, delTag, insTag, ...after];
-
-    para['w:r'] = newRuns;
-    console.log(
-      '✅ Successfully applied tracked changes spanning multiple runs',
+    console.warn(
+      `❌ Original text not found in document: "${issue.original_text}"`,
     );
-    return true;
+    return false;
   } catch (error) {
     console.error('Error applying tracked change spanning runs:', error);
     return false;
@@ -527,16 +539,19 @@ async function applyTrackedChangeToDocument(
           const deletionElement = {
             'w:del': {
               $: {
-                'w:author': 'AI Legal Assistant',
+                'w:author': 'VesperaAI',
                 'w:date': new Date().toISOString(),
                 'w:id': '0',
               },
-              'w:r': {
-                'w:t': {
-                  $: { 'xml:space': 'preserve' },
-                  _: issue.original_text,
+              'w:r': [
+                {
+                  'w:rPr': {},
+                  'w:t': {
+                    $: { 'xml:space': 'preserve' },
+                    _: issue.original_text,
+                  },
                 },
-              },
+              ],
             },
           };
 
@@ -544,21 +559,27 @@ async function applyTrackedChangeToDocument(
           const insertionElement = {
             'w:ins': {
               $: {
-                'w:author': 'AI Legal Assistant',
+                'w:author': 'VesperaAI',
                 'w:date': new Date().toISOString(),
                 'w:id': '1',
               },
-              'w:r': {
-                'w:t': {
-                  $: { 'xml:space': 'preserve' },
-                  _: issue.recommended_text,
+              'w:r': [
+                {
+                  'w:rPr': {},
+                  'w:t': {
+                    $: { 'xml:space': 'preserve' },
+                    _: issue.recommended_text,
+                  },
                 },
-              },
+              ],
             },
           };
 
           // Replace the original run with deletion and insertion
           runs.splice(i, 1, deletionElement, insertionElement);
+          console.log(
+            `✅ Successfully deleted original text and inserted new text as tracked change`,
+          );
           return true; // Successfully applied change
         } else if (textContent && issue.original_text) {
           // Try to find partial matches
@@ -589,16 +610,19 @@ async function applyTrackedChangeToDocument(
             const deletionElement = {
               'w:del': {
                 $: {
-                  'w:author': 'AI Legal Assistant',
+                  'w:author': 'VesperaAI',
                   'w:date': new Date().toISOString(),
                   'w:id': '0',
                 },
-                'w:r': {
-                  'w:t': {
-                    $: { 'xml:space': 'preserve' },
-                    _: issue.original_text,
+                'w:r': [
+                  {
+                    'w:rPr': {},
+                    'w:t': {
+                      $: { 'xml:space': 'preserve' },
+                      _: issue.original_text,
+                    },
                   },
-                },
+                ],
               },
             };
 
@@ -606,21 +630,27 @@ async function applyTrackedChangeToDocument(
             const insertionElement = {
               'w:ins': {
                 $: {
-                  'w:author': 'AI Legal Assistant',
+                  'w:author': 'VesperaAI',
                   'w:date': new Date().toISOString(),
                   'w:id': '1',
                 },
-                'w:r': {
-                  'w:t': {
-                    $: { 'xml:space': 'preserve' },
-                    _: issue.recommended_text,
+                'w:r': [
+                  {
+                    'w:rPr': {},
+                    'w:t': {
+                      $: { 'xml:space': 'preserve' },
+                      _: issue.recommended_text,
+                    },
                   },
-                },
+                ],
               },
             };
 
             // Replace the original run with deletion and insertion
             runs.splice(i, 1, deletionElement, insertionElement);
+            console.log(
+              `✅ Successfully deleted original text and inserted new text as tracked change (partial match)`,
+            );
             return true; // Successfully applied change
           } else {
             console.log(`❌ No match found for: "${issue.original_text}"`);
@@ -658,7 +688,8 @@ async function applySimpleTextReplacement(
           ? paragraph['w:r']
           : [paragraph['w:r']];
 
-        for (const run of runs) {
+        for (let i = 0; i < runs.length; i++) {
+          const run = runs[i];
           const textElement = run['w:t'];
           const textContent =
             typeof textElement === 'string' ? textElement : textElement?._;
@@ -666,24 +697,55 @@ async function applySimpleTextReplacement(
           if (textContent?.includes(issue.original_text)) {
             console.log(`✅ Found text to replace: "${issue.original_text}"`);
 
-            // Simple text replacement
-            if (typeof textElement === 'string') {
-              run['w:t'] = textContent.replace(
-                issue.original_text,
-                issue.recommended_text,
-              );
-            } else if (textElement?._) {
-              textElement._ = textElement._.replace(
-                issue.original_text,
-                issue.recommended_text,
-              );
-            }
+            // Create deletion element for the original text
+            const delElement = {
+              'w:del': {
+                $: {
+                  'w:author': 'VesperaAI',
+                  'w:date': new Date().toISOString(),
+                  'w:id': '1',
+                },
+                'w:r': [
+                  {
+                    'w:rPr': {},
+                    'w:t': {
+                      $: { 'xml:space': 'preserve' },
+                      _: issue.original_text,
+                    },
+                  },
+                ],
+              },
+            };
+
+            // Create insertion element for the new text
+            const insElement = {
+              'w:ins': {
+                $: {
+                  'w:author': 'VesperaAI',
+                  'w:date': new Date().toISOString(),
+                  'w:id': '2',
+                },
+                'w:r': [
+                  {
+                    'w:rPr': {},
+                    'w:t': {
+                      $: { 'xml:space': 'preserve' },
+                      _: issue.recommended_text,
+                    },
+                  },
+                ],
+              },
+            };
+
+            // Replace the run with deletion and insertion elements
+            runs.splice(i, 1, delElement, insElement);
+            console.log(`✅ Replaced run with tracked changes`);
             break;
           }
         }
       }
     }
-    console.log('✅ Simple text replacement completed');
+    console.log('✅ Simple text replacement completed with tracked changes');
   } catch (error) {
     console.error('Error applying simple text replacement:', error);
   }
