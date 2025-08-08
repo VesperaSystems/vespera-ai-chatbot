@@ -19,7 +19,9 @@ interface LegalAnalysisIssue {
 // Ensure /[Content_Types].xml has Override for comments.xml
 async function ensureCommentsContentType(zip: JSZip) {
   try {
-    const contentTypesXml = await zip.file('[Content_Types].xml')?.async('string');
+    const contentTypesXml = await zip
+      .file('[Content_Types].xml')
+      ?.async('string');
     if (!contentTypesXml) return;
 
     if (contentTypesXml.includes('comments.xml')) return; // already present
@@ -27,7 +29,10 @@ async function ensureCommentsContentType(zip: JSZip) {
     // Insert Override before closing </Types>
     const insertion =
       '<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>';
-    const updated = contentTypesXml.replace(/<\/Types>/, `${insertion}\n</Types>`);
+    const updated = contentTypesXml.replace(
+      /<\/Types>/,
+      `${insertion}\n</Types>`,
+    );
     zip.file('[Content_Types].xml', updated);
     console.log('✅ Added comments.xml Override to [Content_Types].xml');
   } catch (e) {
@@ -39,9 +44,15 @@ async function ensureCommentsContentType(zip: JSZip) {
 function liftCommentRangeMarkers(xml: string): string {
   let result = xml;
   // Replace <w:r><w:commentRangeStart w:id="n"/></w:r> with <w:commentRangeStart w:id="n"/>
-  result = result.replace(/<w:r>\s*<w:commentRangeStart ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeStart $1/>');
+  result = result.replace(
+    /<w:r>\s*<w:commentRangeStart ([^>]*?)\/>\s*<\/w:r>/g,
+    '<w:commentRangeStart $1/>',
+  );
   // Replace <w:r><w:commentRangeEnd w:id="n"/></w:r> with <w:commentRangeEnd w:id="n"/>
-  result = result.replace(/<w:r>\s*<w:commentRangeEnd ([^>]*?)\/>\s*<\/w:r>/g, '<w:commentRangeEnd $1/>');
+  result = result.replace(
+    /<w:r>\s*<w:commentRangeEnd ([^>]*?)\/>\s*<\/w:r>/g,
+    '<w:commentRangeEnd $1/>',
+  );
   return result;
 }
 
@@ -224,9 +235,7 @@ async function updateDocumentRels(zip: JSZip) {
         rels.Relationships.Relationship = [];
       }
 
-      const newId = `rId${
-        (rels.Relationships.Relationship.length || 0) + 10
-      }`; // simple deterministic id
+      const newId = `rId${(rels.Relationships.Relationship.length || 0) + 10}`; // simple deterministic id
 
       const commentsRel = {
         $: {
@@ -286,7 +295,7 @@ async function addCommentToDocument(
           console.log(`✅ Found text to comment: "${issue.original_text}"`);
           console.log(`📄 In document text: "${textContent}"`);
 
-            // Sequential comment id
+          // Sequential comment id
           const commentId = comments.length.toString();
           const commentText = `VesperaAI has identified a ${issue.type} and suggests changing this line to: "${issue.recommended_text}"\n\n${issue.comment}`;
 

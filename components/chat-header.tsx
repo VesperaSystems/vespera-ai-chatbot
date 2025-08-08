@@ -18,7 +18,7 @@ import {
 import { MessageCounter } from '@/components/message-counter';
 import { ShareButton } from '@/components/share-button';
 import { FeedbackButton } from '@/components/feedback-button';
-import { PlusIcon } from '@/components/icons';
+import { PlusIcon, FileIcon } from '@/components/icons';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useWindowSize } from 'usehooks-ts';
 
@@ -49,6 +49,7 @@ function PureChatHeader({
   }, []);
 
   const showNewChatButton = mounted && (windowWidth >= 768 || !open);
+  const isLegalTenant = (session as any)?.user?.tenantType === 'legal';
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -91,13 +92,24 @@ function PureChatHeader({
         />
       )}
 
+      {!isReadonly && isLegalTenant && (
+        <Button
+          variant="outline"
+          className="hidden md:flex order-1 md:order-4 md:px-2 md:h-[34px]"
+          onClick={() => router.push('/legal-analysis-editor')}
+        >
+          <FileIcon />
+          Legal
+        </Button>
+      )}
+
       {!isReadonly && (
-        <div className="order-1 md:order-4">
+        <div className="order-1 md:order-5">
           <MessageCounter />
         </div>
       )}
 
-      <div className="order-1 md:order-5">
+      <div className="order-1 md:order-6">
         <ShareButton
           chatId={chatId}
           visibilityType={selectedVisibilityType}
@@ -106,7 +118,7 @@ function PureChatHeader({
       </div>
 
       {!isReadonly && (
-        <div className="order-1 md:order-6">
+        <div className="order-1 md:order-7">
           <FeedbackButton />
         </div>
       )}
