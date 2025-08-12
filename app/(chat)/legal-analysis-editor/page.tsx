@@ -13,8 +13,11 @@ import {
   DownloadIcon,
   UploadIcon,
   PlayIcon,
+  FolderIcon,
 } from '@/components/icons';
 import { toast } from '@/components/toast';
+import { FileManagerProvider } from '@/components/file-manager/FileManagerProvider';
+import { FileManager } from '@/components/file-manager/FileManager';
 
 interface LegalAnalysisIssue {
   id: string;
@@ -61,6 +64,7 @@ export default function LegalAnalysisEditorPage() {
   const [appliedIssues, setAppliedIssues] = useState<Set<string>>(new Set());
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [downloadFileName, setDownloadFileName] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'files' | 'analysis'>('files');
   const searchParams = useSearchParams();
   const chatId = searchParams.get('id');
 
@@ -104,6 +108,9 @@ export default function LegalAnalysisEditorPage() {
               type: 'success',
               description: `Analysis loaded. Found ${parsedData.analysisResult.issues.length} issues.`,
             });
+
+            // Switch to analysis tab
+            setActiveTab('analysis');
 
             // Clear the sessionStorage after loading
             try {
@@ -232,6 +239,7 @@ export default function LegalAnalysisEditorPage() {
           fileName: selectedFile.name,
         });
         setEditableIssues(result.analysis.issues);
+        setActiveTab('analysis');
         toast({
           type: 'success',
           description: `Analysis completed. Found ${result.analysis.issues.length} issues.`,
@@ -420,463 +428,511 @@ export default function LegalAnalysisEditorPage() {
     }
   };
 
-  if (!legalData) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Legal Document Analysis</h1>
-          <p className="text-muted-foreground">
-            Upload a DOCX document and analyze it for legal issues,
-            inconsistencies, and areas for improvement
-          </p>
-        </div>
-
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UploadIcon size={20} />
-              <span className="ml-2">Upload Document for Analysis</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label="Upload document"
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  uploading
-                    ? 'border-muted bg-muted/50'
-                    : 'border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/25'
-                }`}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const files = Array.from(e.dataTransfer.files);
-                  if (files.length > 0) {
-                    const file = files[0];
-                    if (file.name.toLowerCase().endsWith('.docx')) {
-                      handleFileUpload({ target: { files: [file] } } as any);
-                    } else {
-                      toast({
-                        type: 'error',
-                        description: 'Please select a .docx file',
-                      });
-                    }
-                  }
-                }}
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.docx';
-                  input.onchange = (e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target.files && target.files.length > 0) {
-                      handleFileUpload({
-                        target: { files: target.files },
-                      } as any);
-                    }
-                  };
-                  input.click();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.docx';
-                    input.onchange = (e) => {
-                      const target = e.target as HTMLInputElement;
-                      if (target.files && target.files.length > 0) {
-                        handleFileUpload({
-                          target: { files: target.files },
-                        } as any);
-                      }
-                    };
-                    input.click();
-                  }
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {uploading ? (
-                  <div className="space-y-4">
-                    <div className="animate-spin rounded-full size-8 border-b-2 border-primary mx-auto" />
-                    <p className="text-sm text-muted-foreground">
-                      Uploading file...
-                    </p>
-                  </div>
-                ) : selectedFile ? (
-                  <div className="space-y-4">
-                    <div className="mx-auto text-primary">
-                      <FileIcon size={48} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {selectedFile.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Click or drop to change file
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="mx-auto text-muted-foreground">
-                      <UploadIcon size={48} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        Drop your .docx file here
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        or click to browse files
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <Button
-              onClick={handleAnalyze}
-              disabled={!selectedFile || !fileUrl || analyzing}
-              className="w-full"
-            >
-              {analyzing ? (
-                <>
-                  <div className="animate-spin rounded-full size-4 border-b-2 border-white mr-2" />
-                  Analyzing Document...
-                </>
-              ) : (
-                <>
-                  <PlayIcon size={16} />
-                  <span className="ml-2">Analyze Document</span>
-                </>
-              )}
-            </Button>
-
-            {uploading && (
-              <p className="text-sm text-muted-foreground text-center">
-                Uploading file...
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Legal Analysis Results</h1>
-          <p className="text-muted-foreground">
-            Review and edit the legal analysis for: {legalData.fileName}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {editableIssues.length > 0 && (
-            <Button
-              onClick={handleApplyAllChanges}
-              disabled={
-                applyingIssues.size > 0 ||
-                appliedIssues.size === editableIssues.length
-              }
-              className={`${
-                applyingIssues.size > 0
-                  ? 'bg-green-50 border-green-200 text-green-700'
-                  : appliedIssues.size === editableIssues.length
-                    ? 'bg-green-100 border-green-300 text-green-800'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
-            >
-              {applyingIssues.size > 0 ? (
-                <>
-                  <div className="animate-spin rounded-full size-4 border-b-2 border-current mr-2" />
-                  Applying...
-                </>
-              ) : appliedIssues.size === editableIssues.length ? (
-                <>
-                  <div className="size-4 mr-2">✓</div>
-                  <span className="ml-2">All Applied</span>
-                </>
-              ) : (
-                <>
-                  <PlayIcon size={16} />
-                  <span className="ml-2">Apply All</span>
-                </>
-              )}
-            </Button>
-          )}
-          {downloadUrl && (
-            <Button onClick={handleDownload} variant="outline">
-              <DownloadIcon size={16} />
-              <span className="ml-2">Download Edited Document</span>
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => {
-              setLegalData(null);
-              setSelectedFile(null);
-              setFileUrl(null);
-              setEditableIssues([]);
-              setAppliedIssues(new Set());
-              setDownloadUrl(null);
-              setDownloadFileName(null);
-            }}
-          >
-            New Analysis
-          </Button>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Legal Team Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage your legal documents and perform legal analysis
+        </p>
       </div>
 
-      <Tabs defaultValue="issues" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="issues">Issues</TabsTrigger>
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-          <TabsTrigger value="download">Download</TabsTrigger>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'files' | 'analysis')}
+        className="space-y-4"
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="files" className="flex items-center gap-2">
+            <FolderIcon size={16} />
+            File Manager
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <FileIcon size={16} />
+            Legal Analysis
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="issues" className="space-y-4">
-          {/* Analysis metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <FileIcon size={20} />
-                <span className="ml-2">Analysis Summary</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">File:</span>
-                  <p className="text-muted-foreground">
-                    {legalData.analysisResult.metadata?.fileName ||
-                      legalData.fileName}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium">Issues Found:</span>
-                  <p className="text-muted-foreground">
-                    {legalData.analysisResult.issues.length}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium">Characters Analyzed:</span>
-                  <p className="text-muted-foreground">
-                    {legalData.analysisResult.metadata?.charactersAnalyzed ||
-                      'Unknown'}
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium">Analysis Date:</span>
-                  <p className="text-muted-foreground">
-                    {legalData.analysisResult.metadata?.analysisTimestamp
-                      ? new Date(
-                          legalData.analysisResult.metadata.analysisTimestamp,
-                        ).toLocaleDateString()
-                      : new Date().toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Issues list */}
-          <div className="space-y-4">
-            {editableIssues.map((issue, index) => (
-              <Card key={issue.id} className="border-l-4 border-l-primary">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getIssueTypeColor(issue.type)}>
-                        {issue.type}
-                      </Badge>
-                      <span className="text-sm text-foreground font-medium">
-                        Issue #{index + 1}
-                      </span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApplyIssueChanges(issue.id)}
-                      disabled={
-                        applyingIssues.has(issue.id) ||
-                        appliedIssues.has(issue.id)
-                      }
-                      className={
-                        applyingIssues.has(issue.id)
-                          ? 'bg-green-50 border-green-200 text-green-700'
-                          : appliedIssues.has(issue.id)
-                            ? 'bg-green-100 border-green-300 text-green-800'
-                            : ''
-                      }
-                    >
-                      {applyingIssues.has(issue.id) ? (
-                        <div className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                      ) : appliedIssues.has(issue.id) ? (
-                        <div className="size-4 mr-2">✓</div>
-                      ) : (
-                        <PlayIcon size={16} />
-                      )}
-                      <span className="ml-2">
-                        {appliedIssues.has(issue.id) ? 'Applied' : 'Apply'}
-                      </span>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2 text-foreground">
-                      Original Text:
-                    </h4>
-                    <div className="bg-muted p-3 rounded-md text-sm text-foreground border">
-                      {issue.original_text}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2 text-foreground">
-                      Recommended Text:
-                    </h4>
-                    <Textarea
-                      value={issue.recommended_text}
-                      onChange={(e) =>
-                        handleIssueChange(
-                          issue.id,
-                          'recommended_text',
-                          e.target.value,
-                        )
-                      }
-                      className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
-                      rows={4}
-                    />
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2 text-foreground">
-                      Comment:
-                    </h4>
-                    <Textarea
-                      value={issue.comment}
-                      onChange={(e) =>
-                        handleIssueChange(issue.id, 'comment', e.target.value)
-                      }
-                      className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
-                      rows={4}
-                      placeholder="Edit comment..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <TabsContent value="files" className="space-y-4">
+          <div className="h-[calc(100vh-200px)]">
+            <FileManagerProvider>
+              <FileManager />
+            </FileManagerProvider>
           </div>
         </TabsContent>
 
-        <TabsContent value="summary" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analysis Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2 text-foreground">
-                    Document: {legalData.analysisResult.document}
-                  </h3>
-                </div>
+        <TabsContent value="analysis" className="space-y-4">
+          {!legalData ? (
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <UploadIcon size={20} />
+                  <span className="ml-2">Upload Document for Analysis</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium text-foreground">
-                      Total Issues Found:
-                    </span>{' '}
-                    <span className="text-muted-foreground">
-                      {legalData.analysisResult.issues.length}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-foreground">
-                      Analysis Type:
-                    </span>{' '}
-                    <span className="text-muted-foreground">
-                      {legalData.analysisResult.metadata?.analysisType ||
-                        'legal'}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-foreground">
-                      Characters Analyzed:
-                    </span>{' '}
-                    <span className="text-muted-foreground">
-                      {legalData.analysisResult.metadata?.charactersAnalyzed ||
-                        'Unknown'}
-                    </span>
-                  </p>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload document"
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      uploading
+                        ? 'border-muted bg-muted/50'
+                        : 'border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/25'
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files);
+                      if (files.length > 0) {
+                        const file = files[0];
+                        if (file.name.toLowerCase().endsWith('.docx')) {
+                          handleFileUpload({
+                            target: { files: [file] },
+                          } as any);
+                        } else {
+                          toast({
+                            type: 'error',
+                            description: 'Please select a .docx file',
+                          });
+                        }
+                      }
+                    }}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.docx';
+                      input.onchange = (e) => {
+                        const target = e.target as HTMLInputElement;
+                        if (target.files && target.files.length > 0) {
+                          handleFileUpload({
+                            target: { files: target.files },
+                          } as any);
+                        }
+                      };
+                      input.click();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.docx';
+                        input.onchange = (e) => {
+                          const target = e.target as HTMLInputElement;
+                          if (target.files && target.files.length > 0) {
+                            handleFileUpload({
+                              target: { files: target.files },
+                            } as any);
+                          }
+                        };
+                        input.click();
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {uploading ? (
+                      <div className="space-y-4">
+                        <div className="animate-spin rounded-full size-8 border-b-2 border-primary mx-auto" />
+                        <p className="text-sm text-muted-foreground">
+                          Uploading file...
+                        </p>
+                      </div>
+                    ) : selectedFile ? (
+                      <div className="space-y-4">
+                        <div className="mx-auto text-primary">
+                          <FileIcon size={48} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {selectedFile.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Click or drop to change file
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="mx-auto text-muted-foreground">
+                          <UploadIcon size={48} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            Drop your .docx file here
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            or click to browse files
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={!selectedFile || !fileUrl || analyzing}
+                  className="w-full"
+                >
+                  {analyzing ? (
+                    <>
+                      <div className="animate-spin rounded-full size-4 border-b-2 border-white mr-2" />
+                      Analyzing Document...
+                    </>
+                  ) : (
+                    <>
+                      <PlayIcon size={16} />
+                      <span className="ml-2">Analyze Document</span>
+                    </>
+                  )}
+                </Button>
+
+                {uploading && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Uploading file...
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
                 <div>
-                  <h4 className="font-medium mb-2 text-foreground">
-                    Issue Types Found:
-                  </h4>
-                  <ul className="list-disc list-inside space-y-1">
-                    {Array.from(
-                      new Set(editableIssues.map((issue) => issue.type)),
-                    ).map((type) => (
-                      <li key={type} className="text-sm text-muted-foreground">
-                        {type}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="download" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <DownloadIcon size={20} />
-                <span className="ml-2">Download Edited Document</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {downloadUrl ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Your document has been edited with the selected changes.
-                    Click the button below to download the updated version.
+                  <h2 className="text-2xl font-bold mb-2">
+                    Legal Analysis Results
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Review and edit the legal analysis for: {legalData.fileName}
                   </p>
-                  <Button onClick={handleDownload} className="w-full">
-                    <DownloadIcon size={16} />
-                    <span className="ml-2">
-                      Download {downloadFileName || 'edited-document.docx'}
-                    </span>
+                </div>
+                <div className="flex gap-2">
+                  {editableIssues.length > 0 && (
+                    <Button
+                      onClick={handleApplyAllChanges}
+                      disabled={
+                        applyingIssues.size > 0 ||
+                        appliedIssues.size === editableIssues.length
+                      }
+                      className={`${
+                        applyingIssues.size > 0
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : appliedIssues.size === editableIssues.length
+                            ? 'bg-green-100 border-green-300 text-green-800'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                    >
+                      {applyingIssues.size > 0 ? (
+                        <>
+                          <div className="animate-spin rounded-full size-4 border-b-2 border-current mr-2" />
+                          Applying...
+                        </>
+                      ) : appliedIssues.size === editableIssues.length ? (
+                        <>
+                          <div className="size-4 mr-2">✓</div>
+                          <span className="ml-2">All Applied</span>
+                        </>
+                      ) : (
+                        <>
+                          <PlayIcon size={16} />
+                          <span className="ml-2">Apply All</span>
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {downloadUrl && (
+                    <Button onClick={handleDownload} variant="outline">
+                      <DownloadIcon size={16} />
+                      <span className="ml-2">Download Edited Document</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setLegalData(null);
+                      setSelectedFile(null);
+                      setFileUrl(null);
+                      setEditableIssues([]);
+                      setAppliedIssues(new Set());
+                      setDownloadUrl(null);
+                      setDownloadFileName(null);
+                    }}
+                  >
+                    New Analysis
                   </Button>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="mx-auto mb-4 text-muted-foreground">
-                    <AlertTriangleIcon size={48} />
+              </div>
+
+              <Tabs defaultValue="issues" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="issues">Issues</TabsTrigger>
+                  <TabsTrigger value="summary">Summary</TabsTrigger>
+                  <TabsTrigger value="download">Download</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="issues" className="space-y-4">
+                  {/* Analysis metadata */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <FileIcon size={20} />
+                        <span className="ml-2">Analysis Summary</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">File:</span>
+                          <p className="text-muted-foreground">
+                            {legalData.analysisResult.metadata?.fileName ||
+                              legalData.fileName}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium">Issues Found:</span>
+                          <p className="text-muted-foreground">
+                            {legalData.analysisResult.issues.length}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium">
+                            Characters Analyzed:
+                          </span>
+                          <p className="text-muted-foreground">
+                            {legalData.analysisResult.metadata
+                              ?.charactersAnalyzed || 'Unknown'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="font-medium">Analysis Date:</span>
+                          <p className="text-muted-foreground">
+                            {legalData.analysisResult.metadata
+                              ?.analysisTimestamp
+                              ? new Date(
+                                  legalData.analysisResult.metadata
+                                    .analysisTimestamp,
+                                ).toLocaleDateString()
+                              : new Date().toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Issues list */}
+                  <div className="space-y-4">
+                    {editableIssues.map((issue, index) => (
+                      <Card
+                        key={issue.id}
+                        className="border-l-4 border-l-primary"
+                      >
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getIssueTypeColor(issue.type)}>
+                                {issue.type}
+                              </Badge>
+                              <span className="text-sm text-foreground font-medium">
+                                Issue #{index + 1}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApplyIssueChanges(issue.id)}
+                              disabled={
+                                applyingIssues.has(issue.id) ||
+                                appliedIssues.has(issue.id)
+                              }
+                              className={
+                                applyingIssues.has(issue.id)
+                                  ? 'bg-green-50 border-green-200 text-green-700'
+                                  : appliedIssues.has(issue.id)
+                                    ? 'bg-green-100 border-green-300 text-green-800'
+                                    : ''
+                              }
+                            >
+                              {applyingIssues.has(issue.id) ? (
+                                <div className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                              ) : appliedIssues.has(issue.id) ? (
+                                <div className="size-4 mr-2">✓</div>
+                              ) : (
+                                <PlayIcon size={16} />
+                              )}
+                              <span className="ml-2">
+                                {appliedIssues.has(issue.id)
+                                  ? 'Applied'
+                                  : 'Apply'}
+                              </span>
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <h4 className="font-medium mb-2 text-foreground">
+                              Original Text:
+                            </h4>
+                            <div className="bg-muted p-3 rounded-md text-sm text-foreground border">
+                              {issue.original_text}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium mb-2 text-foreground">
+                              Recommended Text:
+                            </h4>
+                            <Textarea
+                              value={issue.recommended_text}
+                              onChange={(e) =>
+                                handleIssueChange(
+                                  issue.id,
+                                  'recommended_text',
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
+                              rows={4}
+                            />
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium mb-2 text-foreground">
+                              Comment:
+                            </h4>
+                            <Textarea
+                              value={issue.comment}
+                              onChange={(e) =>
+                                handleIssueChange(
+                                  issue.id,
+                                  'comment',
+                                  e.target.value,
+                                )
+                              }
+                              className="w-full bg-background border border-input text-foreground p-3 rounded-md text-sm resize-none focus:ring-2 focus:ring-ring focus:border-ring"
+                              rows={4}
+                              placeholder="Edit comment..."
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    No Edited Document Available
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Apply changes to individual issues to generate an edited
-                    document for download.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </TabsContent>
+
+                <TabsContent value="summary" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Analysis Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2 text-foreground">
+                            Document: {legalData.analysisResult.document}
+                          </h3>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-sm">
+                            <span className="font-medium text-foreground">
+                              Total Issues Found:
+                            </span>{' '}
+                            <span className="text-muted-foreground">
+                              {legalData.analysisResult.issues.length}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="font-medium text-foreground">
+                              Analysis Type:
+                            </span>{' '}
+                            <span className="text-muted-foreground">
+                              {legalData.analysisResult.metadata
+                                ?.analysisType || 'legal'}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            <span className="font-medium text-foreground">
+                              Characters Analyzed:
+                            </span>{' '}
+                            <span className="text-muted-foreground">
+                              {legalData.analysisResult.metadata
+                                ?.charactersAnalyzed || 'Unknown'}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div>
+                          <h4 className="font-medium mb-2 text-foreground">
+                            Issue Types Found:
+                          </h4>
+                          <ul className="list-disc list-inside space-y-1">
+                            {Array.from(
+                              new Set(
+                                editableIssues.map((issue) => issue.type),
+                              ),
+                            ).map((type) => (
+                              <li
+                                key={type}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {type}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="download" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <DownloadIcon size={20} />
+                        <span className="ml-2">Download Edited Document</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {downloadUrl ? (
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            Your document has been edited with the selected
+                            changes. Click the button below to download the
+                            updated version.
+                          </p>
+                          <Button onClick={handleDownload} className="w-full">
+                            <DownloadIcon size={16} />
+                            <span className="ml-2">
+                              Download{' '}
+                              {downloadFileName || 'edited-document.docx'}
+                            </span>
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="mx-auto mb-4 text-muted-foreground">
+                            <AlertTriangleIcon size={48} />
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2">
+                            No Edited Document Available
+                          </h3>
+                          <p className="text-muted-foreground">
+                            Apply changes to individual issues to generate an
+                            edited document for download.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

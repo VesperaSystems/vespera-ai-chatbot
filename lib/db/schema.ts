@@ -216,3 +216,24 @@ export const subscriptionTypes = pgTable('subscription_types', {
 });
 
 export type SubscriptionType = InferSelectModel<typeof subscriptionTypes>;
+
+export const files = pgTable('Files', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  type: varchar('type', { length: 100 }).notNull(),
+  size: varchar('size', { length: 50 }),
+  blobUrl: text('blobUrl'),
+  folder: varchar('folder', { length: 255 }).notNull().default('/'),
+  thumbnailUrl: text('thumbnailUrl'),
+  videoUrl: text('videoUrl'),
+  pdfUrl: text('pdfUrl'),
+  itemCount: varchar('itemCount', { length: 50 }),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  tenantId: uuid('tenantId').references(() => tenant.id),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type File = InferSelectModel<typeof files>;
