@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   FolderIcon,
@@ -32,10 +32,24 @@ interface TreeViewItemProps {
 
 const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { currentFolder, setCurrentFolder } = useFileManagerContext();
+  const { currentFolder, setCurrentFolder, fileCollection } = useFileManagerContext();
 
   const hasChildren = item.children && item.children.length > 0;
   const isActive = currentFolder === item.path;
+
+  // Calculate file count for this folder
+  const fileCount = useMemo(() => {
+    if (item.type !== 'folder') return 0;
+    
+    // Count files directly in this folder (not subfolders)
+    return fileCollection.filter(file => {
+      if (item.path === '/') {
+        return file.folderPath === '/';
+      }
+      // For other folders, count files that are directly in this folder
+      return file.folderPath === item.path;
+    }).length;
+  }, [fileCollection, item.path, item.type]);
 
   const handleClick = () => {
     if (item.type === 'folder') {
@@ -62,11 +76,11 @@ const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
         <div className="flex items-center w-full">
           {hasChildren && (
             <div className="mr-1">
-                        {isExpanded ? (
-            <ChevronDownIcon className="size-3" />
-          ) : (
-            <ChevronRightIcon className="size-3" />
-          )}
+              {isExpanded ? (
+                <ChevronDownIcon className="size-3" />
+              ) : (
+                <ChevronRightIcon className="size-3" />
+              )}
             </div>
           )}
           {!hasChildren && <div className="w-4 mr-1" />}
@@ -75,9 +89,10 @@ const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
 
           <span className="truncate flex-1">{item.name}</span>
 
-          {item.badge && (
+          {/* Show file count badge */}
+          {item.type === 'folder' && fileCount > 0 && (
             <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
-              {item.badge}
+              {fileCount}
             </span>
           )}
 
@@ -114,7 +129,7 @@ export const TreeView = ({ items, className }: TreeViewProps) => {
   );
 };
 
-// Default tree view data
+// Updated tree view data with accurate structure
 export const defaultTreeViewItems: TreeViewItem[] = [
   {
     id: '1',
@@ -127,21 +142,18 @@ export const defaultTreeViewItems: TreeViewItem[] = [
         name: 'Documents',
         type: 'folder',
         path: '/documents',
-        badge: '12',
         children: [
           {
             id: '1-1-1',
             name: 'Legal',
             type: 'folder',
             path: '/documents/legal',
-            badge: '5',
           },
           {
             id: '1-1-2',
             name: 'Contracts',
             type: 'folder',
             path: '/documents/contracts',
-            badge: '7',
           },
         ],
       },
@@ -150,21 +162,18 @@ export const defaultTreeViewItems: TreeViewItem[] = [
         name: 'Images',
         type: 'folder',
         path: '/images',
-        badge: '8',
       },
       {
         id: '1-3',
         name: 'Videos',
         type: 'folder',
         path: '/videos',
-        badge: '3',
       },
       {
         id: '1-4',
         name: 'Downloads',
         type: 'folder',
         path: '/downloads',
-        badge: '15',
       },
     ],
   },
@@ -173,20 +182,17 @@ export const defaultTreeViewItems: TreeViewItem[] = [
     name: 'Shared with me',
     type: 'folder',
     path: '/shared',
-    badge: '4',
   },
   {
     id: '3',
     name: 'Recent',
     type: 'folder',
     path: '/recent',
-    badge: '6',
   },
   {
     id: '4',
     name: 'Trash',
     type: 'folder',
     path: '/trash',
-    badge: '2',
   },
 ];

@@ -49,7 +49,253 @@ export interface File {
   blobUrl?: string;
   userId?: string;
   tenantId?: string;
+  folderPath?: string; // Add folder path for better organization
 }
+
+// Comprehensive file structure data - loaded once on page load
+const fileStructureData: File[] = [
+  // Root level files
+  {
+    id: 1,
+    name: 'Welcome Document.pdf',
+    type: 'pdf',
+    size: '2.4 MB',
+    modified: '2024-01-15',
+    folderPath: '/',
+    fileLink: '/files/welcome-document.pdf',
+    details: [
+      { key: 'File type', value: 'PDF Document' },
+      { key: 'File size', value: '2.4 MB' },
+      { key: 'Created date', value: '2024-01-15' },
+    ],
+    admin: { name: 'System Admin', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Documents folder
+  {
+    id: 2,
+    name: 'Contract Template.docx',
+    type: 'docx',
+    size: '1.8 MB',
+    modified: '2024-01-14',
+    folderPath: '/documents',
+    fileLink: '/files/documents/contract-template.docx',
+    details: [
+      { key: 'File type', value: 'Word Document' },
+      { key: 'File size', value: '1.8 MB' },
+      { key: 'Created date', value: '2024-01-14' },
+    ],
+    admin: { name: 'Legal Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  {
+    id: 3,
+    name: 'Meeting Notes.docx',
+    type: 'docx',
+    size: '856 KB',
+    modified: '2024-01-13',
+    folderPath: '/documents',
+    fileLink: '/files/documents/meeting-notes.docx',
+    details: [
+      { key: 'File type', value: 'Word Document' },
+      { key: 'File size', value: '856 KB' },
+      { key: 'Created date', value: '2024-01-13' },
+    ],
+    admin: { name: 'Project Manager', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Legal subfolder
+  {
+    id: 4,
+    name: 'Employment Agreement.pdf',
+    type: 'pdf',
+    size: '3.2 MB',
+    modified: '2024-01-12',
+    folderPath: '/documents/legal',
+    fileLink: '/files/documents/legal/employment-agreement.pdf',
+    details: [
+      { key: 'File type', value: 'PDF Document' },
+      { key: 'File size', value: '3.2 MB' },
+      { key: 'Created date', value: '2024-01-12' },
+    ],
+    admin: { name: 'HR Department', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  {
+    id: 5,
+    name: 'NDA Template.docx',
+    type: 'docx',
+    size: '1.1 MB',
+    modified: '2024-01-11',
+    folderPath: '/documents/legal',
+    fileLink: '/files/documents/legal/nda-template.docx',
+    details: [
+      { key: 'File type', value: 'Word Document' },
+      { key: 'File size', value: '1.1 MB' },
+      { key: 'Created date', value: '2024-01-11' },
+    ],
+    admin: { name: 'Legal Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Contracts subfolder
+  {
+    id: 6,
+    name: 'Vendor Contract.pdf',
+    type: 'pdf',
+    size: '4.7 MB',
+    modified: '2024-01-10',
+    folderPath: '/documents/contracts',
+    fileLink: '/files/documents/contracts/vendor-contract.pdf',
+    details: [
+      { key: 'File type', value: 'PDF Document' },
+      { key: 'File size', value: '4.7 MB' },
+      { key: 'Created date', value: '2024-01-10' },
+    ],
+    admin: { name: 'Procurement', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  {
+    id: 7,
+    name: 'Service Agreement.docx',
+    type: 'docx',
+    size: '2.1 MB',
+    modified: '2024-01-09',
+    folderPath: '/documents/contracts',
+    fileLink: '/files/documents/contracts/service-agreement.docx',
+    details: [
+      { key: 'File type', value: 'Word Document' },
+      { key: 'File size', value: '2.1 MB' },
+      { key: 'Created date', value: '2024-01-09' },
+    ],
+    admin: { name: 'Legal Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Images folder
+  {
+    id: 8,
+    name: 'Company Logo.png',
+    type: 'png',
+    size: '245 KB',
+    modified: '2024-01-08',
+    folderPath: '/images',
+    fileLink: '/files/images/company-logo.png',
+    img: '/images/company-logo.png',
+    details: [
+      { key: 'File type', value: 'PNG Image' },
+      { key: 'File size', value: '245 KB' },
+      { key: 'Created date', value: '2024-01-08' },
+    ],
+    admin: { name: 'Marketing Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  {
+    id: 9,
+    name: 'Product Screenshot.jpg',
+    type: 'jpg',
+    size: '1.2 MB',
+    modified: '2024-01-07',
+    folderPath: '/images',
+    fileLink: '/files/images/product-screenshot.jpg',
+    img: '/images/product-screenshot.jpg',
+    details: [
+      { key: 'File type', value: 'JPEG Image' },
+      { key: 'File size', value: '1.2 MB' },
+      { key: 'Created date', value: '2024-01-07' },
+    ],
+    admin: { name: 'Product Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Videos folder
+  {
+    id: 10,
+    name: 'Product Demo.mp4',
+    type: 'mp4',
+    size: '15.7 MB',
+    modified: '2024-01-06',
+    folderPath: '/videos',
+    fileLink: '/files/videos/product-demo.mp4',
+    video: '/videos/product-demo.mp4',
+    details: [
+      { key: 'File type', value: 'MP4 Video' },
+      { key: 'File size', value: '15.7 MB' },
+      { key: 'Created date', value: '2024-01-06' },
+    ],
+    admin: { name: 'Product Team', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Downloads folder
+  {
+    id: 11,
+    name: 'Software Installer.exe',
+    type: 'exe',
+    size: '45.2 MB',
+    modified: '2024-01-05',
+    folderPath: '/downloads',
+    fileLink: '/files/downloads/software-installer.exe',
+    details: [
+      { key: 'File type', value: 'Executable' },
+      { key: 'File size', value: '45.2 MB' },
+      { key: 'Created date', value: '2024-01-05' },
+    ],
+    admin: { name: 'IT Department', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Shared folder
+  {
+    id: 12,
+    name: 'Shared Document.pdf',
+    type: 'pdf',
+    size: '1.5 MB',
+    modified: '2024-01-04',
+    folderPath: '/shared',
+    fileLink: '/files/shared/shared-document.pdf',
+    details: [
+      { key: 'File type', value: 'PDF Document' },
+      { key: 'File size', value: '1.5 MB' },
+      { key: 'Created date', value: '2024-01-04' },
+    ],
+    admin: { name: 'External User', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+  
+  // Recent folder (same files but for recent view)
+  {
+    id: 13,
+    name: 'Recent Document.docx',
+    type: 'docx',
+    size: '892 KB',
+    modified: '2024-01-03',
+    folderPath: '/recent',
+    fileLink: '/files/recent/recent-document.docx',
+    details: [
+      { key: 'File type', value: 'Word Document' },
+      { key: 'File size', value: '892 KB' },
+      { key: 'Created date', value: '2024-01-03' },
+    ],
+    admin: { name: 'Current User', avatar: '' },
+    assignees: [],
+    activities: [],
+  },
+];
 
 interface FileManagerContextInterface {
   fileCollection: File[];
@@ -110,27 +356,22 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
       file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       file.type.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFolder = file.fileLink.startsWith(currentFolder);
+    // For root folder, show files directly in root
+    if (currentFolder === '/') {
+      const matchesFolder = file.folderPath === '/';
+      return matchesSearch && matchesFolder;
+    }
+    
+    // For other folders, show files in that folder or its subfolders
+    const matchesFolder = file.folderPath?.startsWith(currentFolder);
 
     return matchesSearch && matchesFolder;
   });
 
-  // Load files from API on mount
+  // Load files from JSON data on mount (no API calls needed)
   useEffect(() => {
-    loadFiles();
+    setFileCollection(fileStructureData);
   }, []);
-
-  const loadFiles = async () => {
-    try {
-      const response = await fetch('/api/files');
-      if (response.ok) {
-        const files = await response.json();
-        setFileCollection(files);
-      }
-    } catch (error) {
-      console.error('Failed to load files:', error);
-    }
-  };
 
   const uploadFile = async (file: File, blob: Blob) => {
     try {
@@ -198,11 +439,10 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
 
       if (response.ok) {
         const blob = await response.blob();
-        const file = fileCollection.find((f) => f.id === fileId);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = file?.name || 'download';
+        a.download = fileCollection.find((f) => f.id === fileId)?.name || 'download';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
