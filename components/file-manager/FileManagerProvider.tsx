@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from 'react';
 
@@ -50,10 +51,18 @@ export interface File {
   userId?: string;
   tenantId?: string;
   folderPath?: string; // Add folder path for better organization
+  sharedBy?: string;
+  permission?: string;
+  sharedAt?: string;
+  lastAccessed?: string;
+  accessCount?: number;
+  _isRecent?: boolean; // Internal metadata for recent files
+  _isShared?: boolean; // Internal metadata for shared files
+  _isTrash?: boolean; // Internal metadata for trash files
 }
 
-// Comprehensive file structure data - loaded once on page load
-const fileStructureData: File[] = [
+// Mock data for fallback and testing
+const mockFileStructureData: File[] = [
   // Root level files
   {
     id: 1,
@@ -72,7 +81,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Documents folder
   {
     id: 2,
@@ -108,7 +117,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Legal subfolder
   {
     id: 4,
@@ -144,7 +153,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Contracts subfolder
   {
     id: 6,
@@ -180,7 +189,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Images folder
   {
     id: 8,
@@ -218,7 +227,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Videos folder
   {
     id: 10,
@@ -238,7 +247,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Downloads folder
   {
     id: 11,
@@ -257,7 +266,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Shared folder
   {
     id: 12,
@@ -276,7 +285,7 @@ const fileStructureData: File[] = [
     assignees: [],
     activities: [],
   },
-  
+
   // Recent folder (same files but for recent view)
   {
     id: 13,
@@ -316,9 +325,12 @@ interface FileManagerContextInterface {
   setSearchQuery: (query: string) => void;
   filteredFiles: File[];
   uploadFile: (file: File, blob: Blob) => Promise<void>;
-  deleteFile: (fileId: number) => Promise<void>;
+  deleteFile: (fileId: number) => Promise<any>;
   shareFile: (fileId: number, email: string) => Promise<void>;
+  restoreFile: (fileId: number) => Promise<any>;
+  permanentlyDeleteFile: (fileId: number) => Promise<any>;
   downloadFile: (fileId: number) => Promise<void>;
+  loadFiles: () => Promise<void>;
 }
 
 const FileManagerContext = createContext<
@@ -361,23 +373,152 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
       const matchesFolder = file.folderPath === '/';
       return matchesSearch && matchesFolder;
     }
-    
+
+    // For recent folder, show files that are marked as recent
+    if (currentFolder === '/recent') {
+      const isRecentFile = file._isRecent;
+      return matchesSearch && isRecentFile;
+    }
+
+    // For shared folder, show files that are marked as shared
+    if (currentFolder === '/shared') {
+      const isSharedFile = file._isShared;
+      return matchesSearch && isSharedFile;
+    }
+
+    // For trash folder, show files that are marked as trash
+    if (currentFolder === '/trash') {
+      const isTrashFile = file._isTrash;
+      return matchesSearch && isTrashFile;
+    }
+
     // For other folders, show files in that folder or its subfolders
     const matchesFolder = file.folderPath?.startsWith(currentFolder);
 
     return matchesSearch && matchesFolder;
   });
 
-  // Load files from JSON data on mount (no API calls needed)
+  // Load trash files from API
+  const loadTrashFiles = async () => {
+    try {
+      const response = await fetch('/api/files/trash');
+      console.log('Trash API response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Trash API response data:', data);
+        console.log('trashFiles length:', data.trashFiles?.length);
+
+        const trashFiles = data.trashFiles || [];
+
+        // Add metadata to identify trash files
+        const trashFilesWithMetadata = trashFiles.map((file: any) => ({
+          ...file,
+          _isTrash: true,
+        }));
+
+        return trashFilesWithMetadata;
+      } else {
+        console.warn('Trash API failed');
+        return [];
+      }
+    } catch (error) {
+      console.error('Failed to load trash files:', error);
+      return [];
+    }
+  };
+
+  // Load files from API or fallback to mock data
+  const loadFiles = async () => {
+    try {
+      const response = await fetch('/api/files/structure');
+      console.log('API response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API response data:', data);
+        console.log('userFiles length:', data.userFiles?.length);
+        console.log('sharedWithMe length:', data.sharedWithMe?.length);
+        console.log('recentFiles length:', data.recentFiles?.length);
+
+        // Store the different file types separately for filtering
+        const userFiles = data.userFiles || [];
+        const sharedFiles = data.sharedWithMe || [];
+        const recentFiles = data.recentFiles || [];
+
+        // Combine all files, ensuring no duplicates
+        const allFiles = [...userFiles, ...sharedFiles, ...recentFiles];
+
+        // Debug logging for file counts
+        console.log(
+          'File counts - User:',
+          userFiles.length,
+          'Shared:',
+          sharedFiles.length,
+          'Recent:',
+          recentFiles.length,
+        );
+
+        // Remove duplicates based on file ID
+        const uniqueFiles = allFiles.filter(
+          (file, index, self) =>
+            index === self.findIndex((f) => f.id === file.id),
+        );
+
+        // Add metadata to identify file types
+        const filesWithMetadata = uniqueFiles.map((file) => {
+          const isRecent = recentFiles.some((rf: any) => rf.id === file.id);
+          const isShared = sharedFiles.some((sf: any) => sf.id === file.id);
+
+          return {
+            ...file,
+            _isRecent: isRecent,
+            _isShared: isShared,
+            _isTrash: false,
+          };
+        });
+
+        setFileCollection(filesWithMetadata);
+      } else {
+        // Fallback to mock data if API fails
+        console.warn('API failed, using mock data');
+        setFileCollection(mockFileStructureData);
+      }
+    } catch (error) {
+      console.error('Failed to load files:', error);
+      // Fallback to mock data
+      setFileCollection(mockFileStructureData);
+    }
+  };
+
+  // Load files based on current folder
+  const loadFilesForCurrentFolder = useCallback(async () => {
+    if (currentFolder === '/trash') {
+      // Load only trash files
+      const trashFiles = await loadTrashFiles();
+      setFileCollection(trashFiles);
+    } else {
+      // Load regular files (excluding trash)
+      await loadFiles();
+    }
+  }, [currentFolder]);
+
+  // Load files on mount and when folder changes
   useEffect(() => {
-    setFileCollection(fileStructureData);
-  }, []);
+    loadFilesForCurrentFolder();
+  }, [loadFilesForCurrentFolder]);
 
   const uploadFile = async (file: File, blob: Blob) => {
     try {
       const formData = new FormData();
       formData.append('file', blob, file.name);
-      formData.append('metadata', JSON.stringify(file));
+      formData.append(
+        'metadata',
+        JSON.stringify({
+          name: file.name,
+          folder: file.folderPath || '/',
+        }),
+      );
 
       const response = await fetch('/api/files/upload', {
         method: 'POST',
@@ -385,10 +526,20 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
       });
 
       if (response.ok) {
-        const uploadedFile = await response.json();
-        setFileCollection((prev) => [...prev, uploadedFile]);
+        const result = await response.json();
+        // Reload files to get the updated structure
+        await loadFiles();
       } else {
-        throw new Error('Failed to upload file');
+        const errorText = await response.text();
+        console.error(
+          'Upload failed with status:',
+          response.status,
+          'Error:',
+          errorText,
+        );
+        throw new Error(
+          `Failed to upload file: ${response.status} - ${errorText}`,
+        );
       }
     } catch (error) {
       console.error('Failed to upload file:', error);
@@ -403,10 +554,36 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
       });
 
       if (response.ok) {
-        setFileCollection((prev) => prev.filter((file) => file.id !== fileId));
-        setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+        const result = await response.json();
+
+        if (result.action === 'moved_to_trash') {
+          // File was moved to trash - remove from collection
+          setFileCollection((prev) => {
+            console.log('Removing file from collection:', fileId);
+            return prev.filter((file) => file.id !== fileId);
+          });
+          setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+        } else if (result.action === 'removed_access') {
+          // User removed their access to a shared file - remove from collection
+          setFileCollection((prev) => {
+            console.log('Removing shared file access:', fileId);
+            return prev.filter((file) => file.id !== fileId);
+          });
+          setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+        } else if (result.action === 'permanently_deleted') {
+          // File was permanently deleted - remove from collection
+          setFileCollection((prev) => {
+            console.log('Removing permanently deleted file:', fileId);
+            return prev.filter((file) => file.id !== fileId);
+          });
+          setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+        }
+
+        return result;
       } else {
-        throw new Error('Failed to delete file');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Failed to delete file';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Failed to delete file:', error);
@@ -425,10 +602,69 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to share file');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Failed to share file';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Failed to share file:', error);
+      throw error;
+    }
+  };
+
+  const restoreFile = async (fileId: number) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}/restore`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Failed to restore file';
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+
+      // File was restored - remove from trash collection
+      setFileCollection((prev) => {
+        console.log('Removing restored file from trash:', fileId);
+        return prev.filter((file) => file.id !== fileId);
+      });
+      setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+
+      return result;
+    } catch (error) {
+      console.error('Failed to restore file:', error);
+      throw error;
+    }
+  };
+
+  const permanentlyDeleteFile = async (fileId: number) => {
+    try {
+      const response = await fetch(`/api/files/${fileId}/permanent-delete`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.error || 'Failed to permanently delete file';
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+
+      // File was permanently deleted - remove from collection
+      setFileCollection((prev) => {
+        console.log('Removing permanently deleted file:', fileId);
+        return prev.filter((file) => file.id !== fileId);
+      });
+      setCheckedFileIds((prev) => prev.filter((id) => id !== fileId));
+
+      return result;
+    } catch (error) {
+      console.error('Failed to permanently delete file:', error);
       throw error;
     }
   };
@@ -442,7 +678,8 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = fileCollection.find((f) => f.id === fileId)?.name || 'download';
+        a.download =
+          fileCollection.find((f) => f.id === fileId)?.name || 'download';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -477,7 +714,10 @@ export const FileManagerProvider = ({ children }: FileManagerProviderProps) => {
     uploadFile,
     deleteFile,
     shareFile,
+    restoreFile,
+    permanentlyDeleteFile,
     downloadFile,
+    loadFiles,
   };
 
   return (

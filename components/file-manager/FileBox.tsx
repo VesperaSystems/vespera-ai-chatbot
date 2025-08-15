@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +15,13 @@ import {
   DownloadIcon,
   ShareIcon,
   TrashIcon,
+  RotateCcwIcon,
+  Trash2Icon,
 } from '@/components/icons';
 import { useFileManagerContext, type File } from './FileManagerProvider';
+import { ShareFileDialog } from './ShareFileDialog';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface FileBoxProps {
   file: File;
@@ -25,78 +30,78 @@ interface FileBoxProps {
 const getFileIcon = (file: File) => {
   switch (file.type) {
     case 'folder':
-      return <FolderIcon className="size-8 text-blue-500" />;
+      return <FolderIcon size={32} />;
     case 'image':
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'webp':
-      return <ImageIcon className="size-8 text-green-500" />;
+      return <ImageIcon size={32} />;
     case 'video':
     case 'mp4':
     case 'avi':
     case 'mov':
     case 'wmv':
-      return <VideoIcon className="size-8 text-purple-500" />;
+      return <VideoIcon size={32} />;
     case 'pdf':
-      return <FileTextIcon className="size-8 text-red-500" />;
+      return <FileTextIcon size={32} />;
     case 'doc':
     case 'docx':
-      return <FileTextIcon className="size-8 text-blue-600" />;
+      return <FileTextIcon size={32} />;
     case 'xls':
     case 'xlsx':
-      return <FileTextIcon className="size-8 text-green-600" />;
+      return <FileTextIcon size={32} />;
     case 'ppt':
     case 'pptx':
-      return <FileTextIcon className="size-8 text-orange-600" />;
+      return <FileTextIcon size={32} />;
     case 'txt':
-      return <FileTextIcon className="size-8 text-gray-500" />;
+      return <FileTextIcon size={32} />;
     case 'zip':
     case 'rar':
     case '7z':
-      return <FileIcon className="size-8 text-yellow-500" />;
+      return <FileIcon size={32} />;
     default:
-      return <FileIcon className="size-8 text-gray-500" />;
+      return <FileIcon size={32} />;
   }
 };
 
 const getFileTypeColor = (type: string) => {
   switch (type) {
     case 'folder':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
     case 'image':
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'webp':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
     case 'video':
     case 'mp4':
     case 'avi':
     case 'mov':
     case 'wmv':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-violet-500/20 text-violet-300 border-violet-500/30';
     case 'pdf':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
     case 'doc':
     case 'docx':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-sky-500/20 text-sky-300 border-sky-500/30';
     case 'xls':
     case 'xlsx':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-teal-500/20 text-teal-300 border-teal-500/30';
     case 'ppt':
     case 'pptx':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
+      return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
     case 'txt':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
     case 'zip':
     case 'rar':
     case '7z':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
   }
 };
 
@@ -109,6 +114,8 @@ export const FileBox = ({ file }: FileBoxProps) => {
     downloadFile,
     deleteFile,
     shareFile,
+    restoreFile,
+    permanentlyDeleteFile,
   } = useFileManagerContext();
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -166,20 +173,53 @@ export const FileBox = ({ file }: FileBoxProps) => {
 
   const handleDelete = async () => {
     try {
-      await deleteFile(file.id);
+      console.log('Attempting to delete file:', file.id, file.name);
+      const result = await deleteFile(file.id);
+      console.log('Delete result:', result);
+
+      // Show appropriate message based on the action
+      if (result?.action === 'moved_to_trash') {
+        toast.success('File moved to trash successfully');
+      } else if (result?.action === 'removed_access') {
+        toast.success('File access removed successfully');
+      }
     } catch (error) {
       console.error('Failed to delete file:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete file';
+      toast.error(errorMessage);
     }
   };
 
-  const handleShare = async () => {
-    const email = prompt('Enter email address to share with:');
-    if (email) {
-      try {
-        await shareFile(file.id, email);
-      } catch (error) {
-        console.error('Failed to share file:', error);
-      }
+  const handleRestore = async () => {
+    try {
+      console.log('Attempting to restore file:', file.id, file.name);
+      const result = await restoreFile(file.id);
+      console.log('Restore result:', result);
+
+      toast.success('File restored successfully');
+    } catch (error) {
+      console.error('Failed to restore file:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to restore file';
+      toast.error(errorMessage);
+    }
+  };
+
+  const handlePermanentlyDelete = async () => {
+    try {
+      console.log('Attempting to permanently delete file:', file.id, file.name);
+      const result = await permanentlyDeleteFile(file.id);
+      console.log('Permanently delete result:', result);
+
+      toast.success('File permanently deleted');
+    } catch (error) {
+      console.error('Failed to permanently delete file:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to permanently delete file';
+      toast.error(errorMessage);
     }
   };
 
@@ -214,10 +254,11 @@ export const FileBox = ({ file }: FileBoxProps) => {
         {/* File Preview */}
         <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
           {file.type === 'image' && file.img && (
-            <img
+            <Image
               src={file.img}
               alt={file.name}
-              className="size-full object-cover"
+              fill
+              className="object-cover"
             />
           )}
 
@@ -280,26 +321,59 @@ export const FileBox = ({ file }: FileBoxProps) => {
               onClick={handleDownload}
               title="Download"
             >
-              <DownloadIcon className="size-4" />
+              <DownloadIcon size={16} />
             </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="size-8 p-0 opacity-80 hover:opacity-100"
-              onClick={handleShare}
-              title="Share"
-            >
-              <ShareIcon className="size-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="size-8 p-0 opacity-80 hover:opacity-100"
-              onClick={handleDelete}
-              title="Delete"
-            >
-              <TrashIcon className="size-4" />
-            </Button>
+
+            {/* Show different actions based on whether file is in trash */}
+            {file._isTrash ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="size-8 p-0 opacity-80 hover:opacity-100"
+                  onClick={handleRestore}
+                  title="Restore"
+                >
+                  <RotateCcwIcon size={16} />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="size-8 p-0 opacity-80 hover:opacity-100"
+                  onClick={handlePermanentlyDelete}
+                  title="Permanently Delete"
+                >
+                  <Trash2Icon size={16} />
+                </Button>
+              </>
+            ) : (
+              <>
+                <ShareFileDialog
+                  fileId={file.id}
+                  fileName={file.name}
+                  onShare={shareFile}
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="size-8 p-0 opacity-80 hover:opacity-100"
+                      title="Share"
+                    >
+                      <ShareIcon size={16} />
+                    </Button>
+                  }
+                />
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="size-8 p-0 opacity-80 hover:opacity-100"
+                  onClick={handleDelete}
+                  title="Delete"
+                >
+                  <TrashIcon size={16} />
+                </Button>
+              </>
+            )}
           </div>
         )}
       </CardContent>

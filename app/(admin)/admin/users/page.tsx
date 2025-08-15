@@ -40,6 +40,7 @@ export default function UsersPage() {
     isAdmin: false,
     subscriptionType: 1,
     tenantId: '',
+    tenantType: 'quant',
   });
 
   const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>(
@@ -91,6 +92,7 @@ export default function UsersPage() {
       isAdmin: user.isAdmin,
       subscriptionType: user.subscriptionType,
       tenantId: user.tenantId || '',
+      tenantType: user.tenantType,
     });
   };
 
@@ -232,6 +234,28 @@ export default function UsersPage() {
                             {tenant.name}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tenantType">Tenant Type</Label>
+                    <Select
+                      value={editForm.tenantType}
+                      onValueChange={(value) =>
+                        setEditForm({
+                          ...editForm,
+                          tenantType: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select tenant type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="quant">Quantitative</SelectItem>
+                        <SelectItem value="legal">Legal</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

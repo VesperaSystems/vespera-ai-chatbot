@@ -1,26 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   GridIcon,
   ListIcon,
   UploadIcon,
-  SearchIcon,
   FolderIcon,
   FileIcon,
-  ImageIcon,
-  VideoIcon,
-  FileTextIcon,
   DownloadIcon,
   ShareIcon,
   TrashIcon,
+  RotateCcwIcon,
+  Trash2Icon,
 } from '@/components/icons';
 import { FileBox } from './FileBox';
 import { TreeView, defaultTreeViewItems } from './TreeView';
+import { ShareFileDialog } from './ShareFileDialog';
 import { useFileManagerContext, type File } from './FileManagerProvider';
 import { cn } from '@/lib/utils';
 
@@ -38,10 +36,13 @@ export const FileManager = ({ className }: FileManagerProps) => {
     selectedFile,
     setSelectedFile,
     checkedFileIds,
+    currentFolder,
     uploadFile,
     deleteFile,
     shareFile,
     downloadFile,
+    restoreFile,
+    permanentlyDeleteFile,
   } = useFileManagerContext();
 
   const [showSidebar, setShowSidebar] = useState(true);
@@ -58,7 +59,7 @@ export const FileManager = ({ className }: FileManagerProps) => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileData: File = {
-          id: Date.now() + i,
+          id: Date.now() + Math.random() * 1000 + i, // More unique ID generation
           name: file.name,
           type: file.type.split('/')[1] || 'file',
           size: formatFileSize(file.size),
@@ -106,42 +107,39 @@ export const FileManager = ({ className }: FileManagerProps) => {
     }
   };
 
+  const handleBulkRestore = async () => {
+    if (checkedFileIds.length === 0) return;
+
+    if (
+      confirm(
+        `Are you sure you want to restore ${checkedFileIds.length} file(s)?`,
+      )
+    ) {
+      for (const fileId of checkedFileIds) {
+        await restoreFile(fileId);
+      }
+    }
+  };
+
+  const handleBulkPermanentlyDelete = async () => {
+    if (checkedFileIds.length === 0) return;
+
+    if (
+      confirm(
+        `Are you sure you want to permanently delete ${checkedFileIds.length} file(s)? This action cannot be undone.`,
+      )
+    ) {
+      for (const fileId of checkedFileIds) {
+        await permanentlyDeleteFile(fileId);
+      }
+    }
+  };
+
   const handleBulkDownload = async () => {
     for (const fileId of checkedFileIds) {
       await downloadFile(fileId);
     }
   };
-
-  const getFileTypeStats = () => {
-    const stats = {
-      folders: 0,
-      images: 0,
-      videos: 0,
-      documents: 0,
-      others: 0,
-    };
-
-    filteredFiles.forEach((file) => {
-      if (file.type === 'folder') stats.folders++;
-      else if (
-        ['image', 'jpg', 'jpeg', 'png', 'gif', 'webp'].includes(file.type)
-      )
-        stats.images++;
-      else if (['video', 'mp4', 'avi', 'mov', 'wmv'].includes(file.type))
-        stats.videos++;
-      else if (
-        ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].includes(
-          file.type,
-        )
-      )
-        stats.documents++;
-      else stats.others++;
-    });
-
-    return stats;
-  };
-
-  const stats = getFileTypeStats();
 
   return (
     <div className={cn('flex h-full', className)}>
@@ -151,34 +149,6 @@ export const FileManager = ({ className }: FileManagerProps) => {
           <div className="space-y-2">
             <h3 className="font-semibold text-sm">File Manager</h3>
             <TreeView items={defaultTreeViewItems} />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">Storage</h4>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span>Folders</span>
-                <Badge variant="secondary">{stats.folders}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Images</span>
-                <Badge variant="secondary">{stats.images}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Videos</span>
-                <Badge variant="secondary">{stats.videos}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Documents</span>
-                <Badge variant="secondary">{stats.documents}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>Others</span>
-                <Badge variant="secondary">{stats.others}</Badge>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -194,7 +164,7 @@ export const FileManager = ({ className }: FileManagerProps) => {
                 size="sm"
                 onClick={() => setShowSidebar(!showSidebar)}
               >
-                <FolderIcon className="size-4" />
+                <FolderIcon />
               </Button>
               <h2 className="text-lg font-semibold">My Files</h2>
             </div>
@@ -205,15 +175,13 @@ export const FileManager = ({ className }: FileManagerProps) => {
                 size="sm"
                 onClick={() => setIsGridView(!isGridView)}
               >
-                {isGridView ? (
-                  <ListIcon className="size-4" />
-                ) : (
-                  <GridIcon className="size-4" />
-                )}
+                {isGridView ? <ListIcon /> : <GridIcon />}
+                <span className="ml-2">
+                  {isGridView ? 'List' : 'Thumbnails'}
+                </span>
               </Button>
 
               <div className="relative">
-                <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   placeholder="Search files..."
                   value={searchQuery}
@@ -222,7 +190,9 @@ export const FileManager = ({ className }: FileManagerProps) => {
                 />
               </div>
 
-                              <div className="relative">
+              {/* Hide upload button in trash folder */}
+              {currentFolder !== '/trash' && (
+                <div className="relative">
                   <input
                     type="file"
                     multiple
@@ -234,11 +204,12 @@ export const FileManager = ({ className }: FileManagerProps) => {
                     {uploading ? (
                       <div className="animate-spin rounded-full size-4 border-b-2 border-white" />
                     ) : (
-                      <UploadIcon className="size-4" />
+                      <UploadIcon />
                     )}
                     <span className="ml-2">Upload</span>
                   </Button>
                 </div>
+              )}
             </div>
           </div>
 
@@ -249,13 +220,36 @@ export const FileManager = ({ className }: FileManagerProps) => {
                 {checkedFileIds.length} file(s) selected
               </span>
               <Button variant="outline" size="sm" onClick={handleBulkDownload}>
-                <DownloadIcon className="size-4 mr-1" />
+                <DownloadIcon size={16} />
                 Download
               </Button>
-              <Button variant="outline" size="sm" onClick={handleBulkDelete}>
-                <TrashIcon className="size-4 mr-1" />
-                Delete
-              </Button>
+
+              {/* Show different actions based on current folder */}
+              {currentFolder === '/trash' ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkRestore}
+                  >
+                    <RotateCcwIcon size={16} />
+                    Restore
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkPermanentlyDelete}
+                  >
+                    <Trash2Icon size={16} />
+                    Permanently Delete
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" onClick={handleBulkDelete}>
+                  <TrashIcon size={16} />
+                  Delete
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -264,44 +258,103 @@ export const FileManager = ({ className }: FileManagerProps) => {
         <div className="flex-1 p-4">
           {filteredFiles.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <FileIcon className="size-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No files found</h3>
+              <FileIcon size={64} />
+              <h3 className="text-lg font-semibold mb-2">
+                {currentFolder === '/trash'
+                  ? 'Trash is empty'
+                  : 'No files found'}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery
-                  ? 'Try adjusting your search terms'
-                  : 'Upload your first file to get started'}
+                {currentFolder === '/trash'
+                  ? 'Deleted files will appear here for 30 days before being permanently removed'
+                  : searchQuery
+                    ? 'Try adjusting your search terms'
+                    : 'Upload your first file to get started'}
               </p>
-              {!searchQuery && (
-                                  <div className="relative">
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 size-full opacity-0 cursor-pointer"
-                      disabled={uploading}
-                    />
-                    <Button disabled={uploading}>
-                      {uploading ? (
-                        <div className="animate-spin rounded-full size-4 border-b-2 border-white" />
-                      ) : (
-                        <UploadIcon className="size-4" />
-                      )}
-                      <span className="ml-2">Upload Files</span>
-                    </Button>
-                  </div>
+              {!searchQuery && currentFolder !== '/trash' && (
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 size-full opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <Button disabled={uploading}>
+                    {uploading ? (
+                      <div className="animate-spin rounded-full size-4 border-b-2 border-white" />
+                    ) : (
+                      <UploadIcon size={16} />
+                    )}
+                    <span className="ml-2">Upload Files</span>
+                  </Button>
+                </div>
               )}
             </div>
-          ) : (
-            <div
-              className={cn(
-                'grid gap-4',
-                isGridView
-                  ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                  : 'grid-cols-1',
-              )}
-            >
+          ) : isGridView ? (
+            // Grid View (Thumbnails)
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {filteredFiles.map((file) => (
                 <FileBox key={file.id} file={file} />
+              ))}
+            </div>
+          ) : (
+            // List View
+            <div className="space-y-2">
+              {/* List Header */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground border-b">
+                <div className="col-span-6">Name</div>
+                <div className="col-span-2">Shared</div>
+                <div className="col-span-2">Last Modified</div>
+                <div className="col-span-2">File Size</div>
+              </div>
+
+              {/* List Items */}
+              {filteredFiles.map((file) => (
+                <div
+                  key={file.id}
+                  role="button"
+                  tabIndex={0}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
+                  onClick={() => setSelectedFile(file)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedFile(file);
+                    }
+                  }}
+                >
+                  <div className="col-span-6 flex items-center space-x-3">
+                    <div className="flex items-center justify-center size-8 bg-muted rounded">
+                      {getFileIcon(file)}
+                    </div>
+                    <div>
+                      <div className="font-medium">{file.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {file.type.toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-2 flex items-center">
+                    {file.sharedBy ? (
+                      <span className="text-sm text-muted-foreground">
+                        Shared by {file.sharedBy}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">-</span>
+                    )}
+                  </div>
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-sm text-muted-foreground">
+                      {file.modified}
+                    </span>
+                  </div>
+                  <div className="col-span-2 flex items-center">
+                    <span className="text-sm text-muted-foreground">
+                      {file.size}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -326,10 +379,11 @@ export const FileManager = ({ className }: FileManagerProps) => {
             {/* File Preview */}
             <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
               {selectedFile.type === 'image' && selectedFile.img && (
-                <img
+                <Image
                   src={selectedFile.img}
                   alt={selectedFile.name}
-                  className="size-full object-cover rounded-lg"
+                  fill
+                  className="object-cover rounded-lg"
                 />
               )}
               {selectedFile.type === 'video' && selectedFile.video && (
@@ -374,26 +428,26 @@ export const FileManager = ({ className }: FileManagerProps) => {
                 className="w-full"
                 onClick={() => downloadFile(selectedFile.id)}
               >
-                <DownloadIcon className="size-4 mr-2" />
+                <DownloadIcon size={16} />
                 Download
               </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const email = prompt('Enter email address to share with:');
-                  if (email) shareFile(selectedFile.id, email);
-                }}
-              >
-                <ShareIcon className="size-4 mr-2" />
-                Share
-              </Button>
+              <ShareFileDialog
+                fileId={selectedFile.id}
+                fileName={selectedFile.name}
+                onShare={shareFile}
+                trigger={
+                  <Button variant="outline" className="w-full">
+                    <ShareIcon size={16} />
+                    Share
+                  </Button>
+                }
+              />
               <Button
                 variant="destructive"
                 className="w-full"
                 onClick={() => deleteFile(selectedFile.id)}
               >
-                <TrashIcon className="size-4 mr-2" />
+                <TrashIcon size={16} />
                 Delete
               </Button>
             </div>
@@ -402,9 +456,9 @@ export const FileManager = ({ className }: FileManagerProps) => {
             <div className="space-y-2">
               <h5 className="font-medium text-sm">Details</h5>
               <div className="space-y-1 text-sm">
-                {selectedFile.details.map((detail) => (
+                {selectedFile.details.map((detail, index) => (
                   <div
-                    key={`${detail.key}-${detail.value}`}
+                    key={`${selectedFile.id}-detail-${index}-${detail.key}`}
                     className="flex justify-between"
                   >
                     <span className="text-muted-foreground">{detail.key}:</span>
@@ -423,20 +477,20 @@ export const FileManager = ({ className }: FileManagerProps) => {
 const getFileIcon = (file: File) => {
   switch (file.type) {
     case 'folder':
-      return <FolderIcon className="size-8 text-blue-500" />;
+      return <FolderIcon size={32} />;
     case 'image':
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'webp':
-      return <ImageIcon className="size-8 text-green-500" />;
+      return <FileIcon size={32} />;
     case 'video':
     case 'mp4':
     case 'avi':
     case 'mov':
     case 'wmv':
-      return <VideoIcon className="size-8 text-purple-500" />;
+      return <FileIcon size={32} />;
     case 'pdf':
     case 'doc':
     case 'docx':
@@ -445,8 +499,8 @@ const getFileIcon = (file: File) => {
     case 'ppt':
     case 'pptx':
     case 'txt':
-      return <FileTextIcon className="size-8 text-blue-600" />;
+      return <FileIcon size={32} />;
     default:
-      return <FileIcon className="size-8 text-gray-500" />;
+      return <FileIcon size={32} />;
   }
 };

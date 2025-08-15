@@ -176,7 +176,7 @@ export default function LegalAnalysisEditorPage() {
       }
 
       const result = await response.json();
-      setFileUrl(result.url);
+      setFileUrl(result.blob?.url || result.file?.blobUrl);
       toast({
         type: 'success',
         description: 'File uploaded successfully',

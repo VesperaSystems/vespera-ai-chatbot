@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
 import { db } from '@/lib/db';
 import { files } from '@/lib/db/schema';
-import { eq, } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,17 +16,20 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
 
     // Get files for the current user
-    let query = db
-      .select()
-      .from(files)
-      .where(eq(files.userId, session.user.id));
-
-    // Filter by folder if specified
+    let userFiles: any[];
     if (folder !== '/') {
-      query = query.where(eq(files.folder, folder));
+      userFiles = await db
+        .select()
+        .from(files)
+        .where(
+          and(eq(files.userId, session.user.id), eq(files.folder, folder)),
+        );
+    } else {
+      userFiles = await db
+        .select()
+        .from(files)
+        .where(eq(files.userId, session.user.id));
     }
-
-    const userFiles = await query;
 
     // Filter by search term if provided
     const filteredFiles = search
@@ -121,7 +124,7 @@ export async function POST(request: NextRequest) {
         blobUrl: `/api/files/${fileName}`,
         folder: fileMetadata.folder || '/',
         userId: session.user.id,
-        tenantId: session.user.tenantId,
+        tenantId: session.user.tenant?.id || null,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

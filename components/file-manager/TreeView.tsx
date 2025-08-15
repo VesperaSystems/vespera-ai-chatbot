@@ -32,7 +32,8 @@ interface TreeViewItemProps {
 
 const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { currentFolder, setCurrentFolder, fileCollection } = useFileManagerContext();
+  const { currentFolder, setCurrentFolder, fileCollection } =
+    useFileManagerContext();
 
   const hasChildren = item.children && item.children.length > 0;
   const isActive = currentFolder === item.path;
@@ -40,15 +41,35 @@ const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
   // Calculate file count for this folder
   const fileCount = useMemo(() => {
     if (item.type !== 'folder') return 0;
-    
-    // Count files directly in this folder (not subfolders)
-    return fileCollection.filter(file => {
+
+    const count = fileCollection.filter((file) => {
       if (item.path === '/') {
+        // For root "My Files" folder, count files directly in root
         return file.folderPath === '/';
+      }
+      if (item.path === '/recent') {
+        // For recent folder, count files that are marked as recent
+        return file._isRecent;
+      }
+      if (item.path === '/shared') {
+        // For shared folder, count files that are marked as shared
+        return file._isShared;
       }
       // For other folders, count files that are directly in this folder
       return file.folderPath === item.path;
     }).length;
+
+    // Debug logging for root folder
+    if (item.path === '/') {
+      console.log(
+        'Root folder file count:',
+        count,
+        'Total files:',
+        fileCollection.length,
+      );
+    }
+
+    return count;
   }, [fileCollection, item.path, item.type]);
 
   const handleClick = () => {
@@ -77,15 +98,15 @@ const TreeViewItemComponent = ({ item, level = 0 }: TreeViewItemProps) => {
           {hasChildren && (
             <div className="mr-1">
               {isExpanded ? (
-                <ChevronDownIcon className="size-3" />
+                <ChevronDownIcon size={12} />
               ) : (
-                <ChevronRightIcon className="size-3" />
+                <ChevronRightIcon size={12} />
               )}
             </div>
           )}
           {!hasChildren && <div className="w-4 mr-1" />}
 
-          <FolderIcon className="size-4 mr-2 text-blue-500" />
+          <FolderIcon size={16} />
 
           <span className="truncate flex-1">{item.name}</span>
 
@@ -129,53 +150,13 @@ export const TreeView = ({ items, className }: TreeViewProps) => {
   );
 };
 
-// Updated tree view data with accurate structure
+// Updated tree view data with simplified structure
 export const defaultTreeViewItems: TreeViewItem[] = [
   {
     id: '1',
     name: 'My Files',
     type: 'folder',
     path: '/',
-    children: [
-      {
-        id: '1-1',
-        name: 'Documents',
-        type: 'folder',
-        path: '/documents',
-        children: [
-          {
-            id: '1-1-1',
-            name: 'Legal',
-            type: 'folder',
-            path: '/documents/legal',
-          },
-          {
-            id: '1-1-2',
-            name: 'Contracts',
-            type: 'folder',
-            path: '/documents/contracts',
-          },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Images',
-        type: 'folder',
-        path: '/images',
-      },
-      {
-        id: '1-3',
-        name: 'Videos',
-        type: 'folder',
-        path: '/videos',
-      },
-      {
-        id: '1-4',
-        name: 'Downloads',
-        type: 'folder',
-        path: '/downloads',
-      },
-    ],
   },
   {
     id: '2',
