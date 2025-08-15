@@ -165,6 +165,13 @@ export default function LegalAnalysisEditorPage() {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
+      formData.append(
+        'metadata',
+        JSON.stringify({
+          name: file.name,
+          folder: '/legal-analysis',
+        }),
+      );
 
       const response = await fetch('/api/files/upload', {
         method: 'POST',
