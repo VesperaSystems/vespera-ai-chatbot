@@ -15,6 +15,7 @@ import {
   TrashIcon,
   RotateCcwIcon,
   Trash2Icon,
+  HistoryIcon,
 } from '@/components/icons';
 import { FileBox } from './FileBox';
 import { TreeView, defaultTreeViewItems } from './TreeView';
@@ -303,10 +304,11 @@ export const FileManager = ({ className }: FileManagerProps) => {
             <div className="space-y-2">
               {/* List Header */}
               <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground border-b">
-                <div className="col-span-6">Name</div>
+                <div className="col-span-5">Name</div>
                 <div className="col-span-2">Shared</div>
                 <div className="col-span-2">Last Modified</div>
                 <div className="col-span-2">File Size</div>
+                <div className="col-span-1">Actions</div>
               </div>
 
               {/* List Items */}
@@ -324,7 +326,7 @@ export const FileManager = ({ className }: FileManagerProps) => {
                     }
                   }}
                 >
-                  <div className="col-span-6 flex items-center space-x-3">
+                  <div className="col-span-5 flex items-center space-x-3">
                     <div className="flex items-center justify-center size-8 bg-muted rounded">
                       {getFileIcon(file)}
                     </div>
@@ -353,6 +355,22 @@ export const FileManager = ({ className }: FileManagerProps) => {
                     <span className="text-sm text-muted-foreground">
                       {file.size}
                     </span>
+                  </div>
+                  <div className="col-span-1 flex items-center justify-end">
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="size-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/file-history/${file.id}`, '_blank');
+                        }}
+                        title="View History"
+                      >
+                        <HistoryIcon size={14} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -442,6 +460,16 @@ export const FileManager = ({ className }: FileManagerProps) => {
                   </Button>
                 }
               />
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() =>
+                  window.open(`/file-history/${selectedFile.id}`, '_blank')
+                }
+              >
+                <HistoryIcon size={16} />
+                View History
+              </Button>
               <Button
                 variant="destructive"
                 className="w-full"

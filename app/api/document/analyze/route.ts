@@ -238,10 +238,64 @@ Provide a structured analysis with specific issues found in the document.`;
       }>;
     };
 
+    // Calculate correct positions for each issue
+    const issuesWithCorrectPositions = validatedParsed.issues.map((issue) => {
+      const originalText = issue.original_text;
+
+      // Try exact match first
+      let startIndex = extractedText.indexOf(originalText);
+
+      // If not found, try case-insensitive match
+      if (startIndex === -1) {
+        const lowerExtractedText = extractedText.toLowerCase();
+        const lowerOriginalText = originalText.toLowerCase();
+        startIndex = lowerExtractedText.indexOf(lowerOriginalText);
+      }
+
+      // If still not found, try to find a partial match
+      if (startIndex === -1) {
+        const words = originalText
+          .split(/\s+/)
+          .filter((word) => word.length > 3);
+        for (const word of words) {
+          const wordIndex = extractedText
+            .toLowerCase()
+            .indexOf(word.toLowerCase());
+          if (wordIndex !== -1) {
+            startIndex = wordIndex;
+            break;
+          }
+        }
+      }
+
+      const endIndex = startIndex !== -1 ? startIndex + originalText.length : 0;
+
+      console.log(`Position calculation for issue ${issue.id}:`, {
+        originalText,
+        startIndex,
+        endIndex,
+        found: startIndex !== -1,
+        extractedTextLength: extractedText.length,
+        sampleText: extractedText.substring(
+          Math.max(0, startIndex - 20),
+          Math.min(extractedText.length, startIndex + originalText.length + 20),
+        ),
+      });
+
+      return {
+        ...issue,
+        position: {
+          start: startIndex !== -1 ? startIndex : 0,
+          end: endIndex,
+        },
+      };
+    });
+
     // Create a structured analysis result
     const analysisResult = {
       document: validatedParsed.document,
-      issues: validatedParsed.issues,
+      content: extractedText, // Include the actual extracted text content
+      issues: issuesWithCorrectPositions,
       metadata: {
         fileName: fileName,
         fileType: fileType,

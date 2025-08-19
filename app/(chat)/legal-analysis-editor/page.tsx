@@ -18,6 +18,7 @@ import {
 import { toast } from '@/components/toast';
 import { FileManagerProvider } from '@/components/file-manager/FileManagerProvider';
 import { FileManager } from '@/components/file-manager/FileManager';
+import { DocumentEditorWithSuggestions } from '@/components/document-editor-with-suggestions';
 
 interface LegalAnalysisIssue {
   id: string;
@@ -29,10 +30,12 @@ interface LegalAnalysisIssue {
     start: number;
     end: number;
   };
+  status?: 'pending' | 'accepted' | 'rejected';
 }
 
 interface LegalAnalysisResult {
   document: string;
+  content: string; // Add the actual document content
   issues: LegalAnalysisIssue[];
   metadata?: {
     fileName?: string;
@@ -60,6 +63,7 @@ export default function LegalAnalysisEditorPage() {
   const [editableIssues, setEditableIssues] = useState<LegalAnalysisIssue[]>(
     [],
   );
+  const [showEditor, setShowEditor] = useState(false);
   const [applyingIssues, setApplyingIssues] = useState<Set<string>>(new Set());
   const [appliedIssues, setAppliedIssues] = useState<Set<string>>(new Set());
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -94,7 +98,12 @@ export default function LegalAnalysisEditorPage() {
             parsedData.fileName
           ) {
             setLegalData(parsedData);
-            setEditableIssues(parsedData.analysisResult.issues);
+            setEditableIssues(
+              parsedData.analysisResult.issues.map((issue: any) => ({
+                ...issue,
+                status: issue.status || 'pending',
+              })),
+            );
             setFileUrl(parsedData.fileUrl);
 
             // Create a mock File object for the selectedFile state
@@ -245,7 +254,12 @@ export default function LegalAnalysisEditorPage() {
           fileUrl: fileUrl,
           fileName: selectedFile.name,
         });
-        setEditableIssues(result.analysis.issues);
+        setEditableIssues(
+          result.analysis.issues.map((issue: any) => ({
+            ...issue,
+            status: issue.status || 'pending',
+          })),
+        );
         setActiveTab('analysis');
         toast({
           type: 'success',
@@ -409,6 +423,37 @@ export default function LegalAnalysisEditorPage() {
       link.click();
       document.body.removeChild(link);
     }
+  };
+
+  const handleSuggestionAction = (
+    suggestionId: string,
+    action: 'accept' | 'reject',
+  ) => {
+    setEditableIssues((prev) =>
+      prev.map((issue) =>
+        issue.id === suggestionId
+          ? { ...issue, status: action === 'accept' ? 'accepted' : 'rejected' }
+          : issue,
+      ),
+    );
+  };
+
+  const handleAddComment = (suggestionId: string, comment: string) => {
+    setEditableIssues((prev) =>
+      prev.map((issue) =>
+        issue.id === suggestionId
+          ? {
+              ...issue,
+              comment: `${issue.comment}\n\nUser Comment: ${comment}`,
+            }
+          : issue,
+      ),
+    );
+  };
+
+  const handleContentChange = (newContent: string) => {
+    // Update the document content when user makes changes
+    console.log('Document content changed:', newContent);
   };
 
   const getIssueTypeColor = (type: string): string => {
@@ -676,8 +721,9 @@ export default function LegalAnalysisEditorPage() {
               </div>
 
               <Tabs defaultValue="issues" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="issues">Issues</TabsTrigger>
+                  <TabsTrigger value="editor">Document Editor</TabsTrigger>
                   <TabsTrigger value="summary">Summary</TabsTrigger>
                   <TabsTrigger value="download">Download</TabsTrigger>
                 </TabsList>
@@ -747,6 +793,19 @@ export default function LegalAnalysisEditorPage() {
                               <span className="text-sm text-foreground font-medium">
                                 Issue #{index + 1}
                               </span>
+                              {issue.status && (
+                                <Badge
+                                  className={
+                                    issue.status === 'accepted'
+                                      ? 'bg-green-100 text-green-800 border-green-200'
+                                      : issue.status === 'rejected'
+                                        ? 'bg-red-100 text-red-800 border-red-200'
+                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                  }
+                                >
+                                  {issue.status}
+                                </Badge>
+                              )}
                             </div>
                             <Button
                               variant="outline"
@@ -829,6 +888,42 @@ export default function LegalAnalysisEditorPage() {
                       </Card>
                     ))}
                   </div>
+                </TabsContent>
+
+                <TabsContent value="editor" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <FileIcon size={20} />
+                        <span className="ml-2">
+                          Document Editor with Suggested Edits
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[600px]">
+                        <DocumentEditorWithSuggestions
+                          content={
+                            legalData.analysisResult.content ||
+                            legalData.analysisResult.document
+                          }
+                          suggestions={editableIssues.map((issue) => ({
+                            id: issue.id,
+                            type: issue.type,
+                            originalText: issue.original_text,
+                            recommendedText: issue.recommended_text,
+                            comment: issue.comment,
+                            position: issue.position || { start: 0, end: 0 },
+                            status: issue.status || 'pending',
+                          }))}
+                          onContentChange={handleContentChange}
+                          onSuggestionAction={handleSuggestionAction}
+                          onAddComment={handleAddComment}
+                          isReadOnly={false}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="summary" className="space-y-4">

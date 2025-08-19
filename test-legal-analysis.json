@@ -1,0 +1,53 @@
+{
+  "analysisResult": {
+    "document": "This employment agreement between Company XYZ and Employee John Doe is entered into on January 1, 2024. The Employee shall receive a salary of $X per year, payable in accordance with the Company's standard payroll practices. Either party may terminate this Agreement at any time with or without cause. The Employee agrees to maintain confidentiality of all proprietary information.",
+    "issues": [
+      {
+        "id": "issue-1",
+        "type": "ambiguous_compensation",
+        "original_text": "The Employee shall receive a salary of $X per year, payable in accordance with the Company's standard payroll practices.",
+        "recommended_text": "The Employee shall receive a salary of $85,000 per year, payable bi-weekly in accordance with the Company's standard payroll practices.",
+        "comment": "The original text uses a placeholder '$X' which is ambiguous and unenforceable. Specific compensation amounts should be clearly stated to avoid disputes.",
+        "position": {
+          "start": 89,
+          "end": 189
+        },
+        "status": "pending"
+      },
+      {
+        "id": "issue-2",
+        "type": "missing_termination_notice",
+        "original_text": "Either party may terminate this Agreement at any time with or without cause.",
+        "recommended_text": "Either party may terminate this Agreement with 30 days written notice, or immediately for cause as defined in Section 7.",
+        "comment": "The original clause lacks specific notice requirements and definition of 'cause,' which could lead to legal disputes and potential wrongful termination claims.",
+        "position": {
+          "start": 190,
+          "end": 250
+        },
+        "status": "pending"
+      },
+      {
+        "id": "issue-3",
+        "type": "vague_confidentiality",
+        "original_text": "The Employee agrees to maintain confidentiality of all proprietary information.",
+        "recommended_text": "The Employee agrees to maintain confidentiality of all proprietary information, trade secrets, and confidential business information during employment and for a period of 2 years following termination of employment.",
+        "comment": "The confidentiality clause is too vague and lacks specific duration and scope, which may not be enforceable in court.",
+        "position": {
+          "start": 251,
+          "end": 320
+        },
+        "status": "pending"
+      }
+    ],
+    "metadata": {
+      "fileName": "employment_agreement.docx",
+      "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "charactersAnalyzed": 320,
+      "analysisTimestamp": "2024-01-15T10:30:00Z",
+      "analysisType": "legal",
+      "issuesFound": 3
+    }
+  },
+  "fileUrl": "https://example.com/employment_agreement.docx",
+  "fileName": "employment_agreement.docx"
+}

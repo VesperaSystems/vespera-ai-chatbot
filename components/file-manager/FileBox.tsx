@@ -17,9 +17,11 @@ import {
   TrashIcon,
   RotateCcwIcon,
   Trash2Icon,
+  HistoryIcon,
 } from '@/components/icons';
 import { useFileManagerContext, type File } from './FileManagerProvider';
 import { ShareFileDialog } from './ShareFileDialog';
+import { FileHistoryModal } from './FileHistoryModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -120,6 +122,7 @@ export const FileBox = ({ file }: FileBoxProps) => {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -223,160 +226,186 @@ export const FileBox = ({ file }: FileBoxProps) => {
     }
   };
 
+  const handleViewHistory = (fileId: number) => {
+    setShowHistoryModal(true);
+  };
+
   return (
-    <Card
-      className={cn(
-        'relative cursor-pointer transition-all duration-200 hover:shadow-md group',
-        isSelected && 'ring-2 ring-primary',
-        isChecked && 'bg-primary/5',
-      )}
-      onClick={handleSingleClick}
-      onDoubleClick={handleDoubleClick}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <CardContent className="p-4">
-        {/* Checkbox */}
-        <div className="absolute top-2 left-2 z-10">
-          <Checkbox
-            checked={isChecked}
-            onChange={() => {
-              setCheckedFileIds(
-                isChecked
-                  ? checkedFileIds.filter((id) => id !== file.id)
-                  : [...checkedFileIds, file.id],
-              );
-            }}
-            className="file-checkbox"
-          />
-        </div>
-
-        {/* File Preview */}
-        <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
-          {file.type === 'image' && file.img && (
-            <Image
-              src={file.img}
-              alt={file.name}
-              fill
-              className="object-cover"
+    <>
+      <Card
+        className={cn(
+          'relative cursor-pointer transition-all duration-200 hover:shadow-md group',
+          isSelected && 'ring-2 ring-primary',
+          isChecked && 'bg-primary/5',
+        )}
+        onClick={handleSingleClick}
+        onDoubleClick={handleDoubleClick}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
+      >
+        <CardContent className="p-4">
+          {/* Checkbox */}
+          <div className="absolute top-2 left-2 z-10">
+            <Checkbox
+              checked={isChecked}
+              onChange={() => {
+                setCheckedFileIds(
+                  isChecked
+                    ? checkedFileIds.filter((id) => id !== file.id)
+                    : [...checkedFileIds, file.id],
+                );
+              }}
+              className="file-checkbox"
             />
-          )}
+          </div>
 
-          {file.type === 'video' && file.video && (
-            <div className="relative size-full">
-              <video
-                ref={videoRef}
-                src={file.video}
-                className="size-full object-cover"
-                muted
-                onMouseEnter={() => setIsPlaying(true)}
-                onMouseLeave={() => setIsPlaying(false)}
+          {/* File Preview */}
+          <div className="relative aspect-square mb-3 overflow-hidden rounded-lg bg-muted flex items-center justify-center">
+            {file.type === 'image' && file.img && (
+              <Image
+                src={file.img}
+                alt={file.name}
+                fill
+                className="object-cover"
               />
+            )}
+
+            {file.type === 'video' && file.video && (
+              <div className="relative size-full">
+                <video
+                  ref={videoRef}
+                  src={file.video}
+                  className="size-full object-cover"
+                  muted
+                  onMouseEnter={() => setIsPlaying(true)}
+                  onMouseLeave={() => setIsPlaying(false)}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-80"
+                  onClick={handlePlayPause}
+                >
+                  {isPlaying ? '⏸️' : '▶️'}
+                </Button>
+              </div>
+            )}
+
+            {!file.img && !file.video && (
+              <div className="flex items-center justify-center">
+                {getFileIcon(file)}
+              </div>
+            )}
+          </div>
+
+          {/* File Info */}
+          <div className="space-y-1">
+            <h4 className="font-medium text-sm truncate" title={file.name}>
+              {file.name}
+            </h4>
+            <div className="flex items-center justify-between">
+              <Badge
+                variant="outline"
+                className={cn('text-xs', getFileTypeColor(file.type))}
+              >
+                {file.type.toUpperCase()}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {file.size || file.itemCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Modified {file.modified}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          {showActions && (
+            <div className="absolute top-2 right-2 flex gap-1 file-actions">
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-80"
-                onClick={handlePlayPause}
+                className="size-8 p-0 opacity-80 hover:opacity-100"
+                onClick={handleDownload}
+                title="Download"
               >
-                {isPlaying ? '⏸️' : '▶️'}
+                <DownloadIcon size={16} />
               </Button>
-            </div>
-          )}
 
-          {!file.img && !file.video && (
-            <div className="flex items-center justify-center">
-              {getFileIcon(file)}
-            </div>
-          )}
-        </div>
-
-        {/* File Info */}
-        <div className="space-y-1">
-          <h4 className="font-medium text-sm truncate" title={file.name}>
-            {file.name}
-          </h4>
-          <div className="flex items-center justify-between">
-            <Badge
-              variant="outline"
-              className={cn('text-xs', getFileTypeColor(file.type))}
-            >
-              {file.type.toUpperCase()}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {file.size || file.itemCount}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Modified {file.modified}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        {showActions && (
-          <div className="absolute top-2 right-2 flex gap-1 file-actions">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="size-8 p-0 opacity-80 hover:opacity-100"
-              onClick={handleDownload}
-              title="Download"
-            >
-              <DownloadIcon size={16} />
-            </Button>
-
-            {/* Show different actions based on whether file is in trash */}
-            {file._isTrash ? (
-              <>
+              {/* History button for non-trash files */}
+              {!file._isTrash && (
                 <Button
                   size="sm"
                   variant="secondary"
                   className="size-8 p-0 opacity-80 hover:opacity-100"
-                  onClick={handleRestore}
-                  title="Restore"
+                  onClick={() => handleViewHistory(file.id)}
+                  title="View History"
                 >
-                  <RotateCcwIcon size={16} />
+                  <HistoryIcon size={16} />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="size-8 p-0 opacity-80 hover:opacity-100"
-                  onClick={handlePermanentlyDelete}
-                  title="Permanently Delete"
-                >
-                  <Trash2Icon size={16} />
-                </Button>
-              </>
-            ) : (
-              <>
-                <ShareFileDialog
-                  fileId={file.id}
-                  fileName={file.name}
-                  onShare={shareFile}
-                  trigger={
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="size-8 p-0 opacity-80 hover:opacity-100"
-                      title="Share"
-                    >
-                      <ShareIcon size={16} />
-                    </Button>
-                  }
-                />
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="size-8 p-0 opacity-80 hover:opacity-100"
-                  onClick={handleDelete}
-                  title="Delete"
-                >
-                  <TrashIcon size={16} />
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              )}
+
+              {/* Show different actions based on whether file is in trash */}
+              {file._isTrash ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="size-8 p-0 opacity-80 hover:opacity-100"
+                    onClick={handleRestore}
+                    title="Restore"
+                  >
+                    <RotateCcwIcon size={16} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="size-8 p-0 opacity-80 hover:opacity-100"
+                    onClick={handlePermanentlyDelete}
+                    title="Permanently Delete"
+                  >
+                    <Trash2Icon size={16} />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <ShareFileDialog
+                    fileId={file.id}
+                    fileName={file.name}
+                    onShare={shareFile}
+                    trigger={
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="size-8 p-0 opacity-80 hover:opacity-100"
+                        title="Share"
+                      >
+                        <ShareIcon size={16} />
+                      </Button>
+                    }
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="size-8 p-0 opacity-80 hover:opacity-100"
+                    onClick={handleDelete}
+                    title="Delete"
+                  >
+                    <TrashIcon size={16} />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* File History Modal */}
+      <FileHistoryModal
+        fileId={showHistoryModal ? file.id : null}
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+      />
+    </>
   );
 };
