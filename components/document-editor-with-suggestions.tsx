@@ -225,35 +225,36 @@ export function DocumentEditorWithSuggestions({
     };
 
     return new Plugin({
-    state: {
-      init(_, state) {
-        try {
-          return createSuggestionDecorations(state);
-        } catch (error) {
-          console.warn('Failed to initialize suggestions plugin:', error);
-          return DecorationSet.empty;
-        }
+      state: {
+        init(_, state) {
+          try {
+            return createSuggestionDecorations(state);
+          } catch (error) {
+            console.warn('Failed to initialize suggestions plugin:', error);
+            return DecorationSet.empty;
+          }
+        },
+        apply(tr, oldState) {
+          try {
+            return createSuggestionDecorations(tr.doc as unknown as EditorState);
+          } catch (error) {
+            console.warn('Failed to apply suggestions plugin:', error);
+            return DecorationSet.empty;
+          }
+        },
       },
-      apply(tr, oldState) {
-        try {
-          return createSuggestionDecorations(tr.doc as unknown as EditorState);
-        } catch (error) {
-          console.warn('Failed to apply suggestions plugin:', error);
-          return DecorationSet.empty;
-        }
+      props: {
+        decorations(state) {
+          try {
+            return this.getState(state);
+          } catch (error) {
+            console.warn('Failed to get decorations:', error);
+            return DecorationSet.empty;
+          }
+        },
       },
-    },
-    props: {
-      decorations(state) {
-        try {
-          return this.getState(state);
-        } catch (error) {
-          console.warn('Failed to get decorations:', error);
-          return DecorationSet.empty;
-        }
-      },
-    },
-  }), [suggestions]);
+    });
+  }, [suggestions]);
 
   useEffect(() => {
     if (editorRef.current && !viewRef.current) {
