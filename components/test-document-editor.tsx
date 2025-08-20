@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DocumentEditorWithSuggestions } from './document-editor-with-suggestions';
+import { Editor } from './text-editor';
 
 const testContent = `This employment agreement between Company XYZ and Employee John Doe is entered into on January 1, 2024. The Employee shall receive a salary of $X per year, payable in accordance with the Company's standard payroll practices. Either party may terminate this Agreement at any time with or without cause. The Employee agrees to maintain confidentiality of all proprietary information.`;
 
@@ -39,7 +39,7 @@ const testSuggestions = [
 ];
 
 export function TestDocumentEditor() {
-  const [suggestions, setSuggestions] = useState(testSuggestions);
+
   const [content, setContent] = useState(testContent);
   const [contentType, setContentType] = useState<'correct' | 'filename'>(
     'correct',
@@ -51,34 +51,7 @@ export function TestDocumentEditor() {
     filename: 'employment_agreement_test',
   };
 
-  const handleSuggestionAction = (
-    suggestionId: string,
-    action: 'accept' | 'reject',
-  ) => {
-    setSuggestions((prev) =>
-      prev.map((suggestion) =>
-        suggestion.id === suggestionId
-          ? {
-              ...suggestion,
-              status: action === 'accept' ? 'accepted' : 'rejected',
-            }
-          : suggestion,
-      ),
-    );
-  };
 
-  const handleAddComment = (suggestionId: string, comment: string) => {
-    setSuggestions((prev) =>
-      prev.map((suggestion) =>
-        suggestion.id === suggestionId
-          ? {
-              ...suggestion,
-              comment: `${suggestion.comment}\n\nUser Comment: ${comment}`,
-            }
-          : suggestion,
-      ),
-    );
-  };
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
@@ -129,28 +102,17 @@ export function TestDocumentEditor() {
       </div>
 
       <div className="h-[600px] border rounded-lg">
-        <DocumentEditorWithSuggestions
+        <Editor
           content={content}
-          suggestions={suggestions}
-          onContentChange={handleContentChange}
-          onSuggestionAction={handleSuggestionAction}
-          onAddComment={handleAddComment}
-          isReadOnly={false}
+          onSaveContent={handleContentChange}
+          status="idle"
+          isCurrentVersion={true}
+          currentVersionIndex={0}
         />
       </div>
       <div className="mt-4 p-4 bg-muted rounded-lg">
         <h3 className="font-semibold mb-2">Debug Info:</h3>
         <p>Content length: {content.length}</p>
-        <p>Suggestions: {suggestions.length}</p>
-        <p>
-          Pending: {suggestions.filter((s) => s.status === 'pending').length}
-        </p>
-        <p>
-          Accepted: {suggestions.filter((s) => s.status === 'accepted').length}
-        </p>
-        <p>
-          Rejected: {suggestions.filter((s) => s.status === 'rejected').length}
-        </p>
       </div>
     </div>
   );

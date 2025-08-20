@@ -12,7 +12,7 @@ import {
   Shield,
   Scale,
 } from 'lucide-react';
-import { DocumentEditorWithSuggestions } from '@/components/document-editor-with-suggestions';
+import { Editor } from '@/components/text-editor';
 import {
   exportDocumentWithChanges,
   convertIssuesToTrackedChanges,
@@ -172,31 +172,7 @@ export function LegalAnalysisResults({
     }
   };
 
-  const handleSuggestionAction = (
-    suggestionId: string,
-    action: 'accept' | 'reject',
-  ) => {
-    setEditableIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === suggestionId
-          ? { ...issue, status: action === 'accept' ? 'accepted' : 'rejected' }
-          : issue,
-      ),
-    );
-  };
 
-  const handleAddComment = (suggestionId: string, comment: string) => {
-    setEditableIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === suggestionId
-          ? {
-              ...issue,
-              comment: `${issue.comment}\n\nUser Comment: ${comment}`,
-            }
-          : issue,
-      ),
-    );
-  };
 
   const handleContentChange = (newContent: string) => {
     // Update the document content when user makes changes
@@ -311,21 +287,12 @@ export function LegalAnalysisResults({
             </CardHeader>
             <CardContent>
               <div className="h-[600px]">
-                <DocumentEditorWithSuggestions
+                <Editor
                   content={analysisResult.document}
-                  suggestions={editableIssues.map((issue) => ({
-                    id: issue.id,
-                    type: issue.type,
-                    originalText: issue.original_text,
-                    recommendedText: issue.recommended_text,
-                    comment: issue.comment,
-                    position: issue.position || { start: 0, end: 0 },
-                    status: issue.status || 'pending',
-                  }))}
-                  onContentChange={handleContentChange}
-                  onSuggestionAction={handleSuggestionAction}
-                  onAddComment={handleAddComment}
-                  isReadOnly={false}
+                  onSaveContent={handleContentChange}
+                  status="idle"
+                  isCurrentVersion={true}
+                  currentVersionIndex={0}
                 />
               </div>
             </CardContent>

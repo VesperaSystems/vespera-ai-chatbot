@@ -18,7 +18,7 @@ import {
 import { toast } from '@/components/toast';
 import { FileManagerProvider } from '@/components/file-manager/FileManagerProvider';
 import { FileManager } from '@/components/file-manager/FileManager';
-import { DocumentEditorWithSuggestions } from '@/components/document-editor-with-suggestions';
+import { Editor } from '@/components/text-editor';
 
 interface LegalAnalysisIssue {
   id: string;
@@ -425,31 +425,7 @@ export default function LegalAnalysisEditorPage() {
     }
   };
 
-  const handleSuggestionAction = (
-    suggestionId: string,
-    action: 'accept' | 'reject',
-  ) => {
-    setEditableIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === suggestionId
-          ? { ...issue, status: action === 'accept' ? 'accepted' : 'rejected' }
-          : issue,
-      ),
-    );
-  };
 
-  const handleAddComment = (suggestionId: string, comment: string) => {
-    setEditableIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === suggestionId
-          ? {
-              ...issue,
-              comment: `${issue.comment}\n\nUser Comment: ${comment}`,
-            }
-          : issue,
-      ),
-    );
-  };
 
   const handleContentChange = (newContent: string) => {
     // Update the document content when user makes changes
@@ -902,24 +878,15 @@ export default function LegalAnalysisEditorPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="h-[600px]">
-                        <DocumentEditorWithSuggestions
+                        <Editor
                           content={
                             legalData.analysisResult.content ||
                             legalData.analysisResult.document
                           }
-                          suggestions={editableIssues.map((issue) => ({
-                            id: issue.id,
-                            type: issue.type,
-                            originalText: issue.original_text,
-                            recommendedText: issue.recommended_text,
-                            comment: issue.comment,
-                            position: issue.position || { start: 0, end: 0 },
-                            status: issue.status || 'pending',
-                          }))}
-                          onContentChange={handleContentChange}
-                          onSuggestionAction={handleSuggestionAction}
-                          onAddComment={handleAddComment}
-                          isReadOnly={false}
+                          onSaveContent={handleContentChange}
+                          status="idle"
+                          isCurrentVersion={true}
+                          currentVersionIndex={0}
                         />
                       </div>
                     </CardContent>
