@@ -39,7 +39,6 @@ const testSuggestions = [
 ];
 
 export function TestDocumentEditor() {
-
   const [content, setContent] = useState(testContent);
   const [contentType, setContentType] = useState<'correct' | 'filename'>(
     'correct',
@@ -50,8 +49,6 @@ export function TestDocumentEditor() {
     correct: testContent,
     filename: 'employment_agreement_test',
   };
-
-
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);

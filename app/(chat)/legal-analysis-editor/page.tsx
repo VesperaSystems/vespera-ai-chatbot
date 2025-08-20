@@ -425,8 +425,6 @@ export default function LegalAnalysisEditorPage() {
     }
   };
 
-
-
   const handleContentChange = (newContent: string) => {
     // Update the document content when user makes changes
     console.log('Document content changed:', newContent);
