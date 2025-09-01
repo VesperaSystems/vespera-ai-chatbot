@@ -216,3 +216,63 @@ export const subscriptionTypes = pgTable('subscription_types', {
 });
 
 export type SubscriptionType = InferSelectModel<typeof subscriptionTypes>;
+
+export const files = pgTable('Files', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  type: varchar('type', { length: 100 }).notNull(),
+  size: varchar('size', { length: 50 }),
+  blobUrl: text('blobUrl'),
+  folder: varchar('folder', { length: 255 }).notNull().default('/'),
+  thumbnailUrl: text('thumbnailUrl'),
+  videoUrl: text('videoUrl'),
+  pdfUrl: text('pdfUrl'),
+  itemCount: varchar('itemCount', { length: 50 }),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  tenantId: uuid('tenantId').references(() => tenant.id),
+  isDeleted: boolean('isDeleted').notNull().default(false),
+  deletedAt: timestamp('deletedAt'),
+  originalFolder: varchar('originalFolder', { length: 255 }), // Store original folder before deletion
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+});
+
+export type File = InferSelectModel<typeof files>;
+
+// File sharing functionality
+export const fileShares = pgTable('FileShares', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  fileId: integer('fileId')
+    .notNull()
+    .references(() => files.id),
+  sharedByUserId: uuid('sharedByUserId')
+    .notNull()
+    .references(() => user.id),
+  sharedWithUserId: uuid('sharedWithUserId')
+    .notNull()
+    .references(() => user.id),
+  permission: varchar('permission', { length: 20 }).notNull().default('read'), // 'read', 'write', 'admin'
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  expiresAt: timestamp('expiresAt'), // Optional expiration date
+});
+
+export type FileShare = InferSelectModel<typeof fileShares>;
+
+// File access logs for recent files functionality
+export const fileAccessLogs = pgTable('FileAccessLogs', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  fileId: integer('fileId')
+    .notNull()
+    .references(() => files.id),
+  userId: uuid('userId')
+    .notNull()
+    .references(() => user.id),
+  action: varchar('action', { length: 50 }).notNull(), // 'view', 'download', 'edit', 'share'
+  accessedAt: timestamp('accessedAt').notNull().defaultNow(),
+  ipAddress: varchar('ipAddress', { length: 45 }), // IPv6 compatible
+  userAgent: text('userAgent'),
+});
+
+export type FileAccessLog = InferSelectModel<typeof fileAccessLogs>;

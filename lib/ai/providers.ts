@@ -5,12 +5,6 @@ import {
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { isTestEnvironment } from '../constants';
-import {
-  artifactModel,
-  chatModel,
-  reasoningModel,
-  titleModel,
-} from './models.test';
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error('OPENAI_API_KEY is not set in environment variables');
@@ -19,10 +13,13 @@ if (!process.env.OPENAI_API_KEY) {
 export const myProvider = isTestEnvironment
   ? customProvider({
       languageModels: {
-        'chat-model': chatModel,
-        'chat-model-reasoning': reasoningModel,
-        'title-model': titleModel,
-        'artifact-model': artifactModel,
+        'chat-model': openai('gpt-4o'),
+        'chat-model-reasoning': wrapLanguageModel({
+          model: openai('gpt-4o'),
+          middleware: extractReasoningMiddleware({ tagName: 'think' }),
+        }),
+        'title-model': openai('gpt-4o'),
+        'artifact-model': openai('gpt-4o'),
       },
     })
   : customProvider({

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
@@ -12,6 +12,11 @@ import {
   Shield,
   Scale,
 } from 'lucide-react';
+import { Editor } from '@/components/text-editor';
+import {
+  exportDocumentWithChanges,
+  convertIssuesToTrackedChanges,
+} from '@/lib/document-export';
 
 interface LegalIssue {
   id: string;
@@ -19,6 +24,11 @@ interface LegalIssue {
   original_text: string;
   recommended_text: string;
   comment: string;
+  position?: {
+    start: number;
+    end: number;
+  };
+  status?: 'pending' | 'accepted' | 'rejected';
 }
 
 interface LegalAnalysisResult {
@@ -86,10 +96,14 @@ export function LegalAnalysisResults({
   fileName,
 }: LegalAnalysisResultsProps) {
   const [editableIssues, setEditableIssues] = useState<LegalIssue[]>(
-    analysisResult.issues || [],
+    analysisResult.issues.map((issue) => ({
+      ...issue,
+      status: issue.status || 'pending',
+    })) || [],
   );
   const [applyingChanges, setApplyingChanges] = useState(false);
   const [applyingIssue, setApplyingIssue] = useState<string | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   const handleIssueChange = (
     issueId: string,
@@ -158,6 +172,52 @@ export function LegalAnalysisResults({
     }
   };
 
+
+
+  const handleContentChange = (newContent: string) => {
+    // Update the document content when user makes changes
+    console.log('Document content changed:', newContent);
+  };
+
+  const handleExportDocument = async () => {
+    try {
+      const trackedChanges = convertIssuesToTrackedChanges(editableIssues);
+
+      const documentWithChanges = {
+        content: analysisResult.document,
+        changes: trackedChanges,
+        metadata: {
+          fileName: analysisResult.metadata?.fileName || 'document',
+          title: analysisResult.metadata?.fileName || 'Legal Analysis Document',
+          author: 'Vespera AI',
+          createdDate:
+            analysisResult.metadata?.analysisTimestamp ||
+            new Date().toISOString(),
+        },
+      };
+
+      const buffer = await exportDocumentWithChanges(documentWithChanges);
+
+      // Create download link
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${analysisResult.metadata?.fileName || 'document'}_with_changes.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Document exported successfully!');
+    } catch (error) {
+      console.error('Failed to export document:', error);
+      toast.error('Failed to export document');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
@@ -188,6 +248,12 @@ export function LegalAnalysisResults({
 
         <div className="flex gap-2">
           <Button
+            onClick={() => setShowEditor(!showEditor)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {showEditor ? 'Hide Editor' : 'Open Editor'}
+          </Button>
+          <Button
             onClick={handleApplyAllChanges}
             disabled={applyingChanges}
             className="bg-green-600 hover:bg-green-700"
@@ -195,12 +261,44 @@ export function LegalAnalysisResults({
             <CheckCircle className="size-4 mr-2" />
             {applyingChanges ? 'Applying...' : 'Apply All Changes'}
           </Button>
+          <Button onClick={handleExportDocument} variant="outline">
+            <Download className="size-4 mr-2" />
+            Export to Word
+          </Button>
           <Button onClick={handleDownload} variant="outline">
             <Download className="size-4 mr-2" />
-            Download
+            Download Original
           </Button>
         </div>
       </div>
+
+      {/* Document Editor with Suggestions */}
+      {showEditor && (
+        <div className="mb-6">
+          <Card>
+            <CardHeader>
+              <h2 className="text-xl font-semibold">
+                Document Editor with Suggested Edits
+              </h2>
+              <p className="text-muted-foreground">
+                Review and accept/reject suggested changes in the document.
+                Changes are highlighted in the editor.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[600px]">
+                <Editor
+                  content={analysisResult.document}
+                  onSaveContent={handleContentChange}
+                  status="idle"
+                  isCurrentVersion={true}
+                  currentVersionIndex={0}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Issues Cards */}
       <div className="grid gap-6">
@@ -216,6 +314,19 @@ export function LegalAnalysisResults({
                   <span className="text-sm font-medium text-foreground">
                     Issue #{index + 1}
                   </span>
+                  {issue.status && (
+                    <Badge
+                      className={
+                        issue.status === 'accepted'
+                          ? 'bg-green-100 text-green-800'
+                          : issue.status === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                      }
+                    >
+                      {issue.status}
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   onClick={() => handleApplyIssueChanges(issue.id)}
@@ -285,9 +396,29 @@ export function LegalAnalysisResults({
             <h3 className="text-lg font-semibold text-foreground mb-2">
               Analysis Summary
             </h3>
+            <div className="flex justify-center gap-6 mb-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {editableIssues.filter((i) => i.status === 'pending').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Pending</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {editableIssues.filter((i) => i.status === 'accepted').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Accepted</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {editableIssues.filter((i) => i.status === 'rejected').length}
+                </div>
+                <div className="text-sm text-muted-foreground">Rejected</div>
+              </div>
+            </div>
             <p className="text-muted-foreground">
-              Review and edit the recommended changes above. Use the &quot;Apply
-              Changes&quot; buttons to update the document with tracked changes.
+              Review and edit the recommended changes above. Use the editor to
+              accept/reject changes and export to Word when ready.
             </p>
           </div>
         </CardContent>

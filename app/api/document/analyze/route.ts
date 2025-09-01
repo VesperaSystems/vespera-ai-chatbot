@@ -73,14 +73,27 @@ async function analyzeDocumentDirectly({
     let extractedText = '';
 
     // Download the file from the URL
+    console.log('📥 Downloading file from URL:', fileUrl);
     const response = await fetch(fileUrl);
+    console.log('📥 Download response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Failed to download file: ${response.statusText}`);
+      console.error(
+        '❌ File download failed:',
+        response.status,
+        response.statusText,
+      );
+      throw new Error(
+        `Failed to download file: ${response.status} ${response.statusText}`,
+      );
     }
 
     const buffer = await response.arrayBuffer();
+    console.log('📥 File downloaded, buffer size:', buffer.byteLength);
 
     // Extract text based on file type
+    console.log('📄 Extracting text from file type:', fileType);
+
     if (
       fileType ===
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
@@ -88,12 +101,14 @@ async function analyzeDocumentDirectly({
       fileName.toLowerCase().endsWith('.docx') ||
       fileName.toLowerCase().endsWith('.doc')
     ) {
+      console.log('📄 Using mammoth to extract text from DOCX/DOC file');
       const result = await mammoth.extractRawText({
         buffer: Buffer.from(buffer),
       });
       extractedText = result.value;
+      console.log('📄 Text extracted, length:', extractedText.length);
       if (result.messages.length > 0) {
-        console.log('Mammoth warnings:', result.messages);
+        console.log('⚠️ Mammoth warnings:', result.messages);
       }
     } else if (
       fileType === 'application/pdf' ||
@@ -117,9 +132,7 @@ async function analyzeDocumentDirectly({
       .trim();
 
     if (!extractedText) {
-      throw new Error(
-        'No text content could be extracted from this document.',
-      );
+      throw new Error('No text content could be extracted from this document.');
     }
 
     // Console log the extracted text for debugging
@@ -169,6 +182,7 @@ ${extractedText}
 Provide a structured analysis with specific issues found in the document.`;
 
     // Call OpenAI API with JSON schema validation
+    console.log('🤖 Calling OpenAI API for document analysis...');
     const openaiResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
@@ -184,12 +198,19 @@ Provide a structured analysis with specific issues found in the document.`;
       },
       temperature: 0.1, // Lower temperature for more consistent legal analysis
     });
+    console.log('🤖 OpenAI API response received');
 
     const content = openaiResponse.choices[0].message.content;
+    console.log('🤖 OpenAI response content length:', content?.length || 0);
+
     if (!content) {
+      console.error('❌ No content received from OpenAI API');
       throw new Error('No content received from OpenAI API');
     }
+
+    console.log('🤖 Parsing OpenAI response as JSON...');
     const parsed = JSON.parse(content);
+    console.log('🤖 JSON parsing successful');
 
     // Console log the raw JSON response for debugging
     console.log('🔍 Legal Analysis - Raw OpenAI Response:');
@@ -217,10 +238,64 @@ Provide a structured analysis with specific issues found in the document.`;
       }>;
     };
 
+    // Calculate correct positions for each issue
+    const issuesWithCorrectPositions = validatedParsed.issues.map((issue) => {
+      const originalText = issue.original_text;
+
+      // Try exact match first
+      let startIndex = extractedText.indexOf(originalText);
+
+      // If not found, try case-insensitive match
+      if (startIndex === -1) {
+        const lowerExtractedText = extractedText.toLowerCase();
+        const lowerOriginalText = originalText.toLowerCase();
+        startIndex = lowerExtractedText.indexOf(lowerOriginalText);
+      }
+
+      // If still not found, try to find a partial match
+      if (startIndex === -1) {
+        const words = originalText
+          .split(/\s+/)
+          .filter((word) => word.length > 3);
+        for (const word of words) {
+          const wordIndex = extractedText
+            .toLowerCase()
+            .indexOf(word.toLowerCase());
+          if (wordIndex !== -1) {
+            startIndex = wordIndex;
+            break;
+          }
+        }
+      }
+
+      const endIndex = startIndex !== -1 ? startIndex + originalText.length : 0;
+
+      console.log(`Position calculation for issue ${issue.id}:`, {
+        originalText,
+        startIndex,
+        endIndex,
+        found: startIndex !== -1,
+        extractedTextLength: extractedText.length,
+        sampleText: extractedText.substring(
+          Math.max(0, startIndex - 20),
+          Math.min(extractedText.length, startIndex + originalText.length + 20),
+        ),
+      });
+
+      return {
+        ...issue,
+        position: {
+          start: startIndex !== -1 ? startIndex : 0,
+          end: endIndex,
+        },
+      };
+    });
+
     // Create a structured analysis result
     const analysisResult = {
       document: validatedParsed.document,
-      issues: validatedParsed.issues,
+      content: extractedText, // Include the actual extracted text content
+      issues: issuesWithCorrectPositions,
       metadata: {
         fileName: fileName,
         fileType: fileType,
@@ -244,20 +319,37 @@ Provide a structured analysis with specific issues found in the document.`;
     console.error('Error in analyzeDocumentDirectly:', error);
     return {
       error: 'Failed to analyze document',
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      message:
+        error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 Document analysis request received');
+
     const session = await auth();
+    console.log(
+      'Session check:',
+      session ? 'authenticated' : 'not authenticated',
+    );
+
     if (!session?.user) {
+      console.log('❌ Unauthorized access attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { fileUrl, fileName, fileType, userMessage, analysisType } = body;
+
+    console.log('📋 Request parameters:', {
+      fileUrl: fileUrl ? 'provided' : 'missing',
+      fileName: fileName ? 'provided' : 'missing',
+      fileType: fileType ? 'provided' : 'missing',
+      userMessage: userMessage ? 'provided' : 'missing',
+      analysisType: analysisType ? 'provided' : 'missing',
+    });
 
     if (!fileUrl || !fileName || !fileType) {
       return NextResponse.json(

@@ -67,3 +67,5 @@ coverage.xml
 
 # Supabase backups
 supabase-backup*
+vespera-strategies/
+tsconfig.tsbuildinfo

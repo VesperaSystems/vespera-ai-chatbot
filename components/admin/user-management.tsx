@@ -16,12 +16,20 @@ interface User {
   email: string;
   isAdmin: boolean;
   subscriptionType: number;
+  tenantType: string;
 }
 
 interface SubscriptionType {
   id: number;
   name: string;
 }
+
+// Available tenant types
+const TENANT_TYPES = [
+  { value: 'quant', label: 'Quantitative' },
+  { value: 'legal', label: 'Legal' },
+  { value: 'finance', label: 'Finance' },
+];
 
 async function fetchSubscriptionTypes(): Promise<SubscriptionType[]> {
   const res = await fetch('/api/admin/subscription-types');
@@ -94,9 +102,40 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
     }
   };
 
+  const updateUserTenantType = async (userId: string, tenantType: string) => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, tenantType }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user tenant type');
+      }
+
+      setUsers(
+        users.map((user) =>
+          user.id === userId ? { ...user, tenantType } : user,
+        ),
+      );
+      toast.success('User tenant type updated successfully');
+    } catch (error) {
+      console.error('Error updating user tenant type:', error);
+      toast.error('Failed to update user tenant type');
+    }
+  };
+
   const getSubscriptionTypeName = (type: number) => {
     const found = subscriptionTypes.find((t) => t.id === type);
     return found ? found.name : 'Unknown';
+  };
+
+  const getTenantTypeLabel = (type: string) => {
+    const found = TENANT_TYPES.find((t) => t.value === type);
+    return found ? found.label : type;
   };
 
   return (
@@ -117,10 +156,30 @@ export function UserManagement({ users: initialUsers }: { users: User[] }) {
               <p className="font-medium truncate">{user.email}</p>
               <p className="text-sm text-muted-foreground">
                 {user.isAdmin ? 'Admin' : 'Regular User'} •{' '}
-                {getSubscriptionTypeName(user.subscriptionType)}
+                {getSubscriptionTypeName(user.subscriptionType)} •{' '}
+                {getTenantTypeLabel(user.tenantType)}
               </p>
             </div>
             <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Select
+                  value={user.tenantType}
+                  onValueChange={(value) =>
+                    updateUserTenantType(user.id, value)
+                  }
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select tenant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TENANT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Select
                   value={user.subscriptionType.toString()}
