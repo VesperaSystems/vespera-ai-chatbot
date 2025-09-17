@@ -300,30 +300,7 @@ const PurePreviewMessage = ({
               />
             )}
 
-            {/* Add redirect button for assistant messages */}
-            {message.role === 'assistant' && !isLoading && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('🧪 Manual redirect button clicked');
-
-                    // Clear any existing test data
-                    sessionStorage.removeItem('legalAnalysisData');
-
-                    console.log(
-                      '🚀 Redirecting to legal analysis editor with chat ID',
-                    );
-
-                    // Redirect to legal analysis editor with chat ID
-                    window.location.href = `/legal-analysis-editor?id=${chatId}`;
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-                >
-                  📋 Open Legal Analysis Editor
-                </button>
-              </div>
-            )}
+            {/* Legal editor redirect button removed - only accessible via direct URL */}
           </div>
         </div>
       </motion.div>

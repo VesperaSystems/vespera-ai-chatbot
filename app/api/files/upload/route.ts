@@ -158,6 +158,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      url: blobData.url,
+      pathname: fileRecord.name,
+      contentType: file.type,
       file: {
         id: fileRecord.id,
         name: fileRecord.name,

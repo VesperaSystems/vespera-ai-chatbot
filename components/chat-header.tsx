@@ -18,7 +18,7 @@ import {
 import { MessageCounter } from '@/components/message-counter';
 import { ShareButton } from '@/components/share-button';
 import { FeedbackButton } from '@/components/feedback-button';
-import { PlusIcon, FileIcon } from '@/components/icons';
+import { PlusIcon, } from '@/components/icons';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useWindowSize } from 'usehooks-ts';
 
@@ -92,16 +92,7 @@ function PureChatHeader({
         />
       )}
 
-      {!isReadonly && isLegalTenant && (
-        <Button
-          variant="outline"
-          className="hidden md:flex order-1 md:order-4 md:px-2 md:h-[34px]"
-          onClick={() => router.push('/legal-analysis-editor')}
-        >
-          <FileIcon />
-          Legal
-        </Button>
-      )}
+      {/* Legal editor access removed - only accessible via direct URL */}
 
       {!isReadonly && (
         <div className="order-1 md:order-5">
