@@ -18,7 +18,7 @@ import {
 import { MessageCounter } from '@/components/message-counter';
 import { ShareButton } from '@/components/share-button';
 import { FeedbackButton } from '@/components/feedback-button';
-import { PlusIcon, FileIcon } from '@/components/icons';
+import { PlusIcon, } from '@/components/icons';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useWindowSize } from 'usehooks-ts';
 
