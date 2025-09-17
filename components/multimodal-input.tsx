@@ -278,6 +278,13 @@ function PureMultimodalInput({
   const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append(
+      'metadata',
+      JSON.stringify({
+        name: file.name,
+        folder: '/',
+      }),
+    );
 
     try {
       const response = await fetch('/api/files/upload', {

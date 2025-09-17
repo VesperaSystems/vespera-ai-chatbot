@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -55,9 +56,12 @@ export function FileHistoryModal({
   isOpen,
   onClose,
 }: FileHistoryModalProps) {
+  const { data: session } = useSession();
   const [fileHistory, setFileHistory] = useState<FileHistory | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isLegalTenant = session?.user?.tenantType === 'legal';
 
   const fetchFileHistory = useCallback(async () => {
     if (!fileId) return;
@@ -265,7 +269,7 @@ export function FileHistoryModal({
                               </p>
                             </div>
                             <div className="flex gap-1">
-                              {version.type === 'document' && (
+                              {version.type === 'document' && isLegalTenant && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -385,18 +389,7 @@ export function FileHistoryModal({
 
             {/* Quick Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
-              {fileHistory.file.type === 'docx' && (
-                <Button
-                  onClick={() =>
-                    window.open(
-                      `/legal-analysis-editor?fileId=${fileHistory.file.id}`,
-                      '_blank',
-                    )
-                  }
-                >
-                  Open in Legal Editor
-                </Button>
-              )}
+              {/* Legal editor button removed - only accessible via direct URL */}
               <Button
                 variant="outline"
                 onClick={() =>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,10 +48,13 @@ interface FileHistory {
 
 export default function FileHistoryPage() {
   const params = useParams();
+  const { data: session } = useSession();
   const fileId = params.id as string;
   const [fileHistory, setFileHistory] = useState<FileHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isLegalTenant = session?.user?.tenantType === 'legal';
 
   useEffect(() => {
     const fetchFileHistory = async () => {
@@ -160,19 +164,7 @@ export default function FileHistoryPage() {
         <div className="flex items-center gap-2">
           <Badge variant="outline">{fileHistory.file.type.toUpperCase()}</Badge>
           <Badge variant="secondary">{fileHistory.file.size}</Badge>
-          {fileHistory.file.type === 'docx' && (
-            <Button
-              size="sm"
-              onClick={() =>
-                window.open(
-                  `/legal-analysis-editor?fileId=${fileHistory.file.id}`,
-                  '_blank',
-                )
-              }
-            >
-              Open in Legal Editor
-            </Button>
-          )}
+          {/* Legal editor button removed - only accessible via direct URL */}
         </div>
       </div>
 
@@ -312,20 +304,7 @@ export default function FileHistoryPage() {
                         </p>
                       </div>
                       <div className="flex gap-2">
-                        {version.type === 'document' && version.content && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              window.open(
-                                `/legal-analysis-editor?documentId=${version.id}`,
-                                '_blank',
-                              )
-                            }
-                          >
-                            Open in Editor
-                          </Button>
-                        )}
+                        {/* Legal editor button removed - only accessible via direct URL */}
                         {version.type === 'file' && (
                           <Button
                             size="sm"

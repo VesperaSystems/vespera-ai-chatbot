@@ -92,16 +92,7 @@ function PureChatHeader({
         />
       )}
 
-      {!isReadonly && isLegalTenant && (
-        <Button
-          variant="outline"
-          className="hidden md:flex order-1 md:order-4 md:px-2 md:h-[34px]"
-          onClick={() => router.push('/legal-analysis-editor')}
-        >
-          <FileIcon />
-          Legal
-        </Button>
-      )}
+      {/* Legal editor access removed - only accessible via direct URL */}
 
       {!isReadonly && (
         <div className="order-1 md:order-5">
