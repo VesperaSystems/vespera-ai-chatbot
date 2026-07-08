@@ -52,11 +52,19 @@ export default function Page() {
       <div className="w-full max-w-md overflow-hidden rounded-2xl gap-12 flex flex-col">
         <div className="flex flex-col items-center justify-center gap-4 px-4 text-center sm:px-16">
           <Image
-            src="/logos/vesper-logo.png"
+            src="/logos/vespera-mark-light.svg"
             alt="Vespera Logo"
-            width={180}
-            height={60}
-            className="h-auto"
+            width={64}
+            height={64}
+            className="rounded-xl dark:hidden"
+            priority
+          />
+          <Image
+            src="/logos/vespera-mark-dark.svg"
+            alt="Vespera Logo"
+            width={64}
+            height={64}
+            className="hidden rounded-xl dark:block"
             priority
           />
           <h3 className="text-xl font-semibold dark:text-zinc-50">Sign Up</h3>
