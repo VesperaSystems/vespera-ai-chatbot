@@ -1,4 +1,4 @@
-import { db } from './lib/db/index';
+import { db } from '../lib/db/index';
 import { sql } from 'drizzle-orm';
 
 async function checkSchema() {

@@ -339,7 +339,7 @@ To re-enable Redis and resumable streams functionality:
    pnpm run test
    ```
 
-**📖 For detailed setup instructions, see [REDIS_SETUP.md](REDIS_SETUP.md)**
+**📖 For detailed setup instructions, see [REDIS_SETUP.md](docs/REDIS_SETUP.md)**
 
 ### File Upload Limits
 
@@ -411,7 +411,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support and questions:
 
-- Check the [Developer Checklist](DEVELOPER_CHECKLIST.md)
+- Check the [Developer Checklist](docs/DEVELOPER_CHECKLIST.md)
 - Review existing issues on GitHub
 - Create a new issue with detailed information
 
