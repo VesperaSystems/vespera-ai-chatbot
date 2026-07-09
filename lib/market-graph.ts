@@ -1,5 +1,5 @@
 import { ventureEdges, ventureNodes } from "@/data/venture-seed";
-import {
+import type {
   MarketGraphFilters,
   PositionedVentureNode,
   VentureEdge,
@@ -155,16 +155,16 @@ export function getVisibleGraph(filters: MarketGraphFilters) {
 }
 
 function projectNodes(nodes: VentureNode[]): PositionedVentureNode[] {
-  const counts = TYPE_ORDER.reduce<Record<VentureNode["type"], number>>(
-    (accumulator, type) => ({ ...accumulator, [type]: nodes.filter((node) => node.type === type).length }),
-    {
-      company: 0,
-      investor: 0,
-      founder: 0,
-      university: 0,
-      sector: 0,
-    },
-  );
+  const counts: Record<VentureNode["type"], number> = {
+    company: 0,
+    investor: 0,
+    founder: 0,
+    university: 0,
+    sector: 0,
+  };
+  for (const node of nodes) {
+    counts[node.type] += 1;
+  }
 
   const typeIndices = {
     company: 0,

@@ -7,7 +7,7 @@ import type { Group, PerspectiveCamera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Vector3 } from "three";
 
-import { PositionedVentureNode, VentureEdge } from "@/types/venture";
+import type { PositionedVentureNode, VentureEdge } from "@/types/venture";
 
 interface GraphCanvasProps {
   nodes: PositionedVentureNode[];
