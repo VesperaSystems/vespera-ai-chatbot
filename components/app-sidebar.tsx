@@ -60,14 +60,17 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 className="rounded-md px-2.5 py-1.5 transition-colors hover:bg-muted/50"
                 aria-label="Vespera Systems home"
               >
-                <Image
-                  src="/logos/vespera-lockup-dark.svg"
-                  alt="Vespera Systems"
-                  width={229}
-                  height={80}
-                  priority
-                  className="h-auto w-36"
-                />
+                <span className="flex items-center gap-2.5">
+                  <Image
+                    src="/logos/vespera-mark-dark.svg"
+                    alt=""
+                    width={32}
+                    height={32}
+                    priority
+                    className="size-8"
+                  />
+                  <span className="text-xl font-semibold tracking-tight">Vespera Systems</span>
+                </span>
               </Link>
               {session?.user && session.user.subscriptionType !== undefined && (
                 <Link
