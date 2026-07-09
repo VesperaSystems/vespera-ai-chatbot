@@ -142,9 +142,20 @@ export async function POST(request: Request) {
     }
 
     if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message,
-      });
+      let title: string;
+      try {
+        title = await generateTitleFromUserMessage({ message });
+      } catch (error) {
+        // A failed title should not block the chat itself.
+        console.error('Title generation failed, using fallback title:', error);
+        const firstTextPart = message.parts?.find(
+          (part) => part.type === 'text',
+        );
+        title =
+          (firstTextPart && 'text' in firstTextPart
+            ? firstTextPart.text.slice(0, 80)
+            : '') || 'New chat';
+      }
 
       console.log('🔧 Creating new chat:', {
         id,

@@ -1,6 +1,6 @@
 'use server';
 
-import { type UIMessage, streamText } from 'ai';
+import { type UIMessage, generateText } from 'ai';
 import { cookies } from 'next/headers';
 import {
   deleteMessagesByChatIdAfterTimestamp,
@@ -21,9 +21,8 @@ export async function generateTitleFromUserMessage({
   message: UIMessage;
 }) {
   try {
-    const titleModel = myProvider.languageModel('title-model');
-    const { fullStream } = await streamText({
-      model: titleModel,
+    const { text } = await generateText({
+      model: myProvider.languageModel('title-model'),
       system: `\n
       - you will generate a short title based on the first message a user begins a conversation with
       - ensure it is not more than 80 characters long
@@ -37,18 +36,11 @@ export async function generateTitleFromUserMessage({
       ],
     });
 
-    let title = '';
-    for await (const delta of fullStream) {
-      if (delta.type === 'text-delta') {
-        title += delta.textDelta;
-      }
-    }
-
-    if (!title) {
+    if (!text.trim()) {
       throw new Error('Empty title generated');
     }
 
-    return title.trim();
+    return text.trim();
   } catch (error) {
     console.error('Error generating title:', error);
     throw new Error(
