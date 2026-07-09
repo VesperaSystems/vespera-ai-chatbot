@@ -1,5 +1,5 @@
 import { compare } from 'bcrypt-ts';
-import NextAuth from 'next-auth';
+import NextAuth, { type Session } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUser } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
@@ -9,7 +9,7 @@ import { getDefaultSubscriptionTypeForUser } from '@/lib/ai/models';
 
 export const {
   handlers: { GET, POST },
-  auth,
+  auth: nextAuthAuth,
   signIn,
   signOut,
 } = NextAuth({
@@ -85,3 +85,32 @@ export const {
     },
   },
 });
+
+// Temporary production login bypass. Set BYPASS_AUTH=true in Vercel env to
+// enable; every auth() call returns this session without a real login.
+// Remove this block (and the env var) to restore normal auth.
+const BYPASS_SESSION = {
+  user: {
+    id: '276f1931-4dd8-4422-b853-74bf358fb32d',
+    email: 'vespera-admin@mailinator.com',
+    subscriptionType: 3,
+    isAdmin: true,
+    tenantType: 'finance',
+    tenant: {
+      id: '2435a53e-d3dc-40c0-bb9a-5f5ffe65b5dd',
+      name: 'Default Organization',
+      domain: 'default',
+      tenantType: 'quant',
+      createdAt: new Date('2025-08-07T10:49:13.454676Z'),
+      updatedAt: new Date('2025-08-07T10:49:13.454676Z'),
+    },
+  },
+  expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+} as Session;
+
+export async function auth(): Promise<Session | null> {
+  if (process.env.BYPASS_AUTH === 'true') {
+    return BYPASS_SESSION;
+  }
+  return nextAuthAuth();
+}
