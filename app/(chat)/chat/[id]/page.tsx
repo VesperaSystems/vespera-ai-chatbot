@@ -7,8 +7,14 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import type { DBMessage } from '@/lib/db/schema';
 import type { Attachment, UIMessage } from 'ai';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { isChatEnabled } from '@/lib/constants';
+import { ChatAccessGate } from '@/components/chat-access-gate';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
+  if (!isChatEnabled) {
+    return <ChatAccessGate />;
+  }
+
   const params = await props.params;
   const { id } = params;
 

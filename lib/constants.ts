@@ -10,4 +10,8 @@ export const isTestEnvironment = Boolean(
 
 export const guestRegex = /^guest-\d+$/;
 
+// Model calls cost money. Chat stays blocked unless CHAT_ENABLED=true is set
+// (locally in .env.local, or in Vercel env to open up production).
+export const isChatEnabled = process.env.CHAT_ENABLED === 'true';
+
 export const DUMMY_PASSWORD = generateDummyPassword();

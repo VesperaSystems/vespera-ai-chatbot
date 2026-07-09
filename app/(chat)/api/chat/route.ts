@@ -30,7 +30,7 @@ import { createChart } from '@/lib/ai/tools/create-chart';
 import { analyzeDocument } from '@/lib/ai/tools/analyze-document';
 import { extractDocumentText } from '@/lib/ai/tools/extract-document-text';
 import type { DataStreamWriter } from 'ai';
-import { isProductionEnvironment } from '@/lib/constants';
+import { isChatEnabled, isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { getEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -49,6 +49,17 @@ function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  if (!isChatEnabled) {
+    return new Response(
+      JSON.stringify({
+        error: 'Chat access is by invitation',
+        message:
+          'Email access@vesperasystems.com to request access to the Vespera research chat.',
+      }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
+
   let requestBody: PostRequestBody;
 
   try {
