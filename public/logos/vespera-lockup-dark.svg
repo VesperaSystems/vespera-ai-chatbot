@@ -1,6 +1,5 @@
 <svg width="1600" height="560" viewBox="0 0 1600 560" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g transform="translate(92 72) scale(0.42)">
-    <rect x="32" y="32" width="960" height="960" rx="152" fill="#050505"/>
     <rect x="32.5" y="32.5" width="959" height="959" rx="151.5" stroke="#3F3F46"/>
     <path d="M276 506C276 353.032 350.464 232 512 148" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
     <path d="M276 518C276 670.968 350.464 792 512 876" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
@@ -15,6 +14,5 @@
     <circle cx="512" cy="876" r="42" fill="#FAFAFA"/>
   </g>
   <line x1="510" y1="108" x2="510" y2="452" stroke="#3F3F46"/>
-  <text x="590" y="250" fill="#FAFAFA" font-family="Arial, Helvetica, sans-serif" font-size="84" letter-spacing="-2">Vespera Systems</text>
-  <text x="594" y="338" fill="#A1A1AA" font-family="Arial, Helvetica, sans-serif" font-size="34" letter-spacing="14">MAP THE INVISIBLE</text>
+  <text x="590" y="324" fill="#FAFAFA" font-family="Arial, Helvetica, sans-serif" font-size="124" letter-spacing="-3">Vespera Systems</text>
 </svg>
