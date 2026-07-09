@@ -32,7 +32,7 @@ export default async function AdminLayout({
             <div className="flex items-center space-x-6">
               <Link href="/" className="flex items-center space-x-2">
                 <Home size={20} />
-                <span className="font-semibold">Vespera Mission Control</span>
+                <span className="font-semibold">Vespera Systems</span>
               </Link>
               <div className="p-4">
                 <nav className="flex space-x-4">

@@ -261,6 +261,11 @@ export default function HomePage() {
             hello@vespera.systems
           </a>
         </div>
+        <p className="mt-8 text-center text-[11px] leading-5 text-neutral-600 sm:text-left">
+          Daniel Molloy Technology Due Diligence is a trading name of Daniel Molloy Ltd, a company registered in England and Wales.
+          Company number: 15228212. Registered office: 5 Providence Court, Pynes Hill, Exeter, Devon, United Kingdom, EX2 5JL.
+          VAT number: GB452010546.
+        </p>
       </footer>
     </div>
   );

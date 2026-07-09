@@ -64,8 +64,8 @@ const labels = [
 const paletteMap = {
   asteroids: {
     background: '#04070b',
-    grid: 'rgba(110, 255, 225, 0.12)',
-    edge: 'rgba(110, 255, 225, 0.22)',
+    grid: 'rgba(255, 255, 255, 0.10)',
+    edge: 'rgba(255, 255, 255, 0.20)',
     node: '#9dfcff',
     investor: '#ffb347',
     founder: '#e7f08d',
@@ -258,10 +258,10 @@ export function MissionControlDisplay() {
             />
             {config.showLabels && index < 12 && (
               <div className="pointer-events-none absolute left-4 top-[-10px] hidden min-w-28 md:block">
-                <div className="tactical-text text-[10px] uppercase tracking-[0.32em] text-[rgba(215,251,255,0.92)]">
+                <div className="tactical-text text-[10px] uppercase tracking-[0.32em] text-[rgba(250,250,250,0.92)]">
                   {node.type}
                 </div>
-                <div className="mt-1 text-xs text-[rgba(215,251,255,0.72)]">{node.label}</div>
+                <div className="mt-1 text-xs text-[rgba(250,250,250,0.72)]">{node.label}</div>
               </div>
             )}
           </div>
@@ -270,11 +270,11 @@ export function MissionControlDisplay() {
 
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-6 p-5 md:p-8">
         <div className="mission-panel max-w-xl">
-          <div className="hud-label">Vespera Mission Control</div>
-          <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[0.08em] text-[rgba(235,251,255,0.96)] md:text-5xl">
+          <div className="hud-label">Vespera Systems</div>
+          <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-[0.08em] text-[rgba(250,250,250,0.96)] md:text-5xl">
             Map how capital moves.
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-6 text-[rgba(215,251,255,0.64)] md:text-base">
+          <p className="mt-4 max-w-xl text-sm leading-6 text-[rgba(250,250,250,0.64)] md:text-base">
             Everything important is a graph. Observe venture capital as a living system of founders,
             firms, sectors, influence, and time.
           </p>
@@ -282,7 +282,7 @@ export function MissionControlDisplay() {
 
         <div className="mission-panel hidden min-w-72 md:block">
           <div className="hud-label">System Status</div>
-          <div className="mt-4 space-y-3 tactical-text text-xs uppercase tracking-[0.26em] text-[rgba(215,251,255,0.76)]">
+          <div className="mt-4 space-y-3 tactical-text text-xs uppercase tracking-[0.26em] text-[rgba(250,250,250,0.76)]">
             <div className="flex items-center justify-between">
               <span>Display</span>
               <span>Wall Graph</span>
@@ -308,15 +308,15 @@ export function MissionControlDisplay() {
           <div className="hud-label">Network Readout</div>
           <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
             <div>
-              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(215,251,255,0.52)]">Tracked Nodes</div>
+              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(250,250,250,0.52)]">Tracked Nodes</div>
               <div className="mt-2 text-2xl text-[rgba(240,252,255,0.98)]">{nodes.length}</div>
             </div>
             <div>
-              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(215,251,255,0.52)]">Capital Paths</div>
+              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(250,250,250,0.52)]">Capital Paths</div>
               <div className="mt-2 text-2xl text-[rgba(240,252,255,0.98)]">{edges.length}</div>
             </div>
             <div>
-              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(215,251,255,0.52)]">Signal Mode</div>
+              <div className="tactical-text text-[10px] uppercase tracking-[0.28em] text-[rgba(250,250,250,0.52)]">Signal Mode</div>
               <div className="mt-2 text-2xl capitalize text-[rgba(240,252,255,0.98)]">{config.motion}</div>
             </div>
           </div>
@@ -324,7 +324,7 @@ export function MissionControlDisplay() {
 
         <div className="mission-panel">
           <div className="hud-label">Event Stream</div>
-          <div className="mt-4 space-y-3 text-sm text-[rgba(215,251,255,0.68)]">
+          <div className="mt-4 space-y-3 text-sm text-[rgba(250,250,250,0.68)]">
             <div>Capital concentration increasing across AI infrastructure.</div>
             <div>Founder-to-investor adjacency cluster widening in frontier software.</div>
             <div>Cross-border signal intensity elevated in late-stage climate platforms.</div>
@@ -333,7 +333,7 @@ export function MissionControlDisplay() {
 
         <div className="mission-panel">
           <div className="hud-label">Control Links</div>
-          <div className="mt-4 flex flex-col gap-3 text-sm text-[rgba(215,251,255,0.78)]">
+          <div className="mt-4 flex flex-col gap-3 text-sm text-[rgba(250,250,250,0.78)]">
             <Link href="/config" className="transition-colors hover:text-white">Open local display config</Link>
             <Link href="/admin" className="transition-colors hover:text-white">Open estate admin</Link>
             <Link href="/console" className="transition-colors hover:text-white">Open analysis console</Link>

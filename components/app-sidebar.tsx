@@ -14,6 +14,7 @@ import {
   SidebarMenu,
   useSidebar,
 } from '@/components/ui/sidebar';
+import Image from 'next/image';
 import Link from 'next/link';
 import { SUBSCRIPTION_TYPES } from '@/lib/ai/entitlements';
 
@@ -56,9 +57,17 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   setOpenMobile(false);
                   router.refresh();
                 }}
-                className="rounded-md px-2.5 py-1.5 text-lg font-semibold tracking-tight transition-colors hover:bg-muted/50"
+                className="rounded-md px-2.5 py-1.5 transition-colors hover:bg-muted/50"
+                aria-label="Vespera Systems home"
               >
-                Vespera Mission Control
+                <Image
+                  src="/logos/vespera-lockup-dark.svg"
+                  alt="Vespera Systems"
+                  width={229}
+                  height={80}
+                  priority
+                  className="h-auto w-36"
+                />
               </Link>
               {session?.user && session.user.subscriptionType !== undefined && (
                 <Link

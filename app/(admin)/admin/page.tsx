@@ -19,14 +19,14 @@ export default function AdminDashboardPage() {
       <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mission-panel max-w-3xl">
           <div className="hud-label">Estate Admin</div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-[0.08em] text-[rgba(235,251,255,0.96)]">
+          <h1 className="mt-4 text-3xl font-semibold tracking-[0.08em] text-[rgba(250,250,250,0.96)]">
             Admin shell is ready.
           </h1>
-          <p className="mt-4 text-sm leading-6 text-[rgba(215,251,255,0.64)]">
+          <p className="mt-4 text-sm leading-6 text-[rgba(250,250,250,0.64)]">
             Authentication and database services are not configured in this local repo yet, so admin management is in
             staging mode. The route structure is in place and can be activated once secrets are added.
           </p>
-          <div className="mt-6 flex gap-3 text-sm text-[rgba(215,251,255,0.82)]">
+          <div className="mt-6 flex gap-3 text-sm text-[rgba(250,250,250,0.82)]">
             <Link href="/">Return to graph</Link>
             <Link href="/config">Open config</Link>
           </div>

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'FAQ - Vespera Mission Control',
+  title: 'FAQ - Vespera Systems',
   description:
-    'Find answers to frequently asked questions about Vespera Mission Control, its capabilities, pricing, and support.',
+    'Find answers to frequently asked questions about Vespera Systems, its capabilities, pricing, and support.',
 };
 
 export default function FAQLayout({

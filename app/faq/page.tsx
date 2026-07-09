@@ -11,16 +11,16 @@ export default function FAQPage() {
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Find answers to common questions about Vespera Mission Control
+          Find answers to common questions about Vespera Systems
         </p>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>What is Vespera Mission Control?</CardTitle>
+            <CardTitle>What is Vespera Systems?</CardTitle>
             <CardDescription>
-              Vespera Mission Control is an operating system for understanding how capital moves through networks of companies, investors, founders, sectors, and time.
+              Vespera Systems is an operating system for understanding how capital moves through networks of companies, investors, founders, sectors, and time.
             </CardDescription>
           </CardHeader>
         </Card>

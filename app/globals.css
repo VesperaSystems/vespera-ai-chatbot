@@ -3,16 +3,16 @@
 @tailwind utilities;
 
 :root {
-    --foreground-rgb: 215, 251, 255;
-    --background-start-rgb: 4, 7, 11;
-    --background-end-rgb: 4, 7, 11;
+    --foreground-rgb: 250, 250, 250;
+    --background-start-rgb: 5, 5, 5;
+    --background-end-rgb: 5, 5, 5;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --foreground-rgb: 215, 251, 255;
-        --background-start-rgb: 4, 7, 11;
-        --background-end-rgb: 4, 7, 11;
+        --foreground-rgb: 250, 250, 250;
+        --background-start-rgb: 5, 5, 5;
+        --background-end-rgb: 5, 5, 5;
     }
 }
 
@@ -24,74 +24,74 @@
 
 @layer base {
     :root {
-        --background: 222 32% 7%;
-        --foreground: 190 100% 92%;
-        --card: 220 28% 9%;
-        --card-foreground: 190 100% 92%;
-        --popover: 220 28% 9%;
-        --popover-foreground: 190 100% 92%;
-        --primary: 184 100% 69%;
-        --primary-foreground: 222 38% 8%;
-        --secondary: 219 24% 13%;
-        --secondary-foreground: 190 100% 92%;
-        --muted: 220 20% 14%;
-        --muted-foreground: 194 34% 67%;
-        --accent: 219 24% 13%;
-        --accent-foreground: 190 100% 92%;
+        --background: 0 0% 2%;
+        --foreground: 0 0% 98%;
+        --card: 0 0% 4%;
+        --card-foreground: 0 0% 98%;
+        --popover: 0 0% 4%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 4%;
+        --secondary: 0 0% 9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 10%;
+        --muted-foreground: 0 0% 64%;
+        --accent: 0 0% 9%;
+        --accent-foreground: 0 0% 98%;
         --destructive: 0 73% 59%;
         --destructive-foreground: 0 0% 98%;
-        --border: 183 48% 18%;
-        --input: 221 21% 14%;
-        --ring: 184 100% 69%;
-        --chart-1: 184 100% 69%;
+        --border: 0 0% 14%;
+        --input: 0 0% 12%;
+        --ring: 0 0% 83%;
+        --chart-1: 0 0% 98%;
         --chart-2: 35 100% 67%;
         --chart-3: 72 72% 71%;
         --chart-4: 0 89% 70%;
         --chart-5: 142 89% 73%;
         --radius: 0.35rem;
-        --sidebar-background: 221 31% 8%;
-        --sidebar-foreground: 190 100% 92%;
-        --sidebar-primary: 184 100% 69%;
-        --sidebar-primary-foreground: 222 38% 8%;
-        --sidebar-accent: 220 22% 12%;
-        --sidebar-accent-foreground: 190 100% 92%;
-        --sidebar-border: 183 48% 18%;
-        --sidebar-ring: 184 100% 69%;
+        --sidebar-background: 0 0% 3%;
+        --sidebar-foreground: 0 0% 98%;
+        --sidebar-primary: 0 0% 98%;
+        --sidebar-primary-foreground: 0 0% 4%;
+        --sidebar-accent: 0 0% 9%;
+        --sidebar-accent-foreground: 0 0% 98%;
+        --sidebar-border: 0 0% 14%;
+        --sidebar-ring: 0 0% 83%;
     }
 
     .dark {
-        --background: 222 32% 7%;
-        --foreground: 190 100% 92%;
-        --card: 220 28% 9%;
-        --card-foreground: 190 100% 92%;
-        --popover: 220 28% 9%;
-        --popover-foreground: 190 100% 92%;
-        --primary: 184 100% 69%;
-        --primary-foreground: 222 38% 8%;
-        --secondary: 219 24% 13%;
-        --secondary-foreground: 190 100% 92%;
-        --muted: 220 20% 14%;
-        --muted-foreground: 194 34% 67%;
-        --accent: 219 24% 13%;
-        --accent-foreground: 190 100% 92%;
+        --background: 0 0% 2%;
+        --foreground: 0 0% 98%;
+        --card: 0 0% 4%;
+        --card-foreground: 0 0% 98%;
+        --popover: 0 0% 4%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 4%;
+        --secondary: 0 0% 9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 10%;
+        --muted-foreground: 0 0% 64%;
+        --accent: 0 0% 9%;
+        --accent-foreground: 0 0% 98%;
         --destructive: 0 73% 59%;
         --destructive-foreground: 0 0% 98%;
-        --border: 183 48% 18%;
-        --input: 221 21% 14%;
-        --ring: 184 100% 69%;
-        --chart-1: 184 100% 69%;
+        --border: 0 0% 14%;
+        --input: 0 0% 12%;
+        --ring: 0 0% 83%;
+        --chart-1: 0 0% 98%;
         --chart-2: 35 100% 67%;
         --chart-3: 72 72% 71%;
         --chart-4: 0 89% 70%;
         --chart-5: 142 89% 73%;
-        --sidebar-background: 221 31% 8%;
-        --sidebar-foreground: 190 100% 92%;
-        --sidebar-primary: 184 100% 69%;
-        --sidebar-primary-foreground: 222 38% 8%;
-        --sidebar-accent: 220 22% 12%;
-        --sidebar-accent-foreground: 190 100% 92%;
-        --sidebar-border: 183 48% 18%;
-        --sidebar-ring: 184 100% 69%;
+        --sidebar-background: 0 0% 3%;
+        --sidebar-foreground: 0 0% 98%;
+        --sidebar-primary: 0 0% 98%;
+        --sidebar-primary-foreground: 0 0% 4%;
+        --sidebar-accent: 0 0% 9%;
+        --sidebar-accent-foreground: 0 0% 98%;
+        --sidebar-border: 0 0% 14%;
+        --sidebar-ring: 0 0% 83%;
     }
 }
 
@@ -102,7 +102,7 @@
 
     body {
         @apply bg-background text-foreground;
-        background-image: radial-gradient(circle at top, rgba(109, 252, 241, 0.06), transparent 35%);
+        background-image: radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 35%);
     }
 }
 
@@ -163,8 +163,8 @@
 
 .mission-grid {
     background-image:
-        linear-gradient(rgba(109, 252, 241, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(109, 252, 241, 0.08) 1px, transparent 1px);
+        linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
     background-size: 72px 72px;
 }
 
@@ -174,13 +174,13 @@
 }
 
 .radial-fade {
-    background: radial-gradient(circle at center, transparent 0%, rgba(4, 7, 11, 0.08) 46%, rgba(4, 7, 11, 0.72) 100%);
+    background: radial-gradient(circle at center, transparent 0%, rgba(5, 5, 5, 0.08) 46%, rgba(5, 5, 5, 0.72) 100%);
 }
 
 .mission-panel {
-    border: 1px solid rgba(110, 255, 225, 0.18);
-    background: linear-gradient(180deg, rgba(10, 18, 24, 0.84), rgba(4, 8, 12, 0.7));
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 0 30px rgba(19, 77, 73, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(14, 14, 14, 0.84), rgba(5, 5, 5, 0.7));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), 0 0 30px rgba(255, 255, 255, 0.05);
     padding: 1rem;
     backdrop-filter: blur(12px);
 }
@@ -189,7 +189,7 @@
     font-size: 10px;
     letter-spacing: 0.34em;
     text-transform: uppercase;
-    color: rgba(155, 252, 255, 0.72);
+    color: rgba(250, 250, 250, 0.66);
 }
 
 .tactical-text {
