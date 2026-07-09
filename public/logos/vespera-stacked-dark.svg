@@ -1,0 +1,20 @@
+<svg width="840" height="1120" viewBox="0 0 840 1120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="840" height="1120" rx="48" fill="#050505"/>
+  <g transform="translate(110 84) scale(0.62)">
+    <rect x="32" y="32" width="960" height="960" rx="152" fill="#050505"/>
+    <rect x="32.5" y="32.5" width="959" height="959" rx="151.5" stroke="#3F3F46"/>
+    <path d="M276 506C276 353.032 350.464 232 512 148" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M276 518C276 670.968 350.464 792 512 876" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M512 148L798 432" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M512 876L798 592" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M276 512H798" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M276 512C404 512 488 448 512 148" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <path d="M276 512C404 512 488 576 512 876" stroke="#FAFAFA" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="276" cy="512" r="42" fill="#FAFAFA"/>
+    <circle cx="512" cy="148" r="42" fill="#FAFAFA"/>
+    <circle cx="798" cy="512" r="42" fill="#FAFAFA"/>
+    <circle cx="512" cy="876" r="42" fill="#FAFAFA"/>
+  </g>
+  <text x="420" y="904" text-anchor="middle" fill="#FAFAFA" font-family="Arial, Helvetica, sans-serif" font-size="72" letter-spacing="-1">Vespera Systems</text>
+  <text x="420" y="978" text-anchor="middle" fill="#A1A1AA" font-family="Arial, Helvetica, sans-serif" font-size="28" letter-spacing="12">MAP THE INVISIBLE</text>
+</svg>
