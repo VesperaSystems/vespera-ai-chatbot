@@ -19,11 +19,9 @@ interface SuggestedActionsProps {
 function PureSuggestedActions({
   chatId,
   append,
-  selectedVisibilityType,
   attachments = [],
   handleSubmit,
 }: SuggestedActionsProps) {
-  // Check if there are document attachments
   const hasDocumentAttachments = attachments.some(
     (attachment) =>
       attachment.contentType?.includes('document') ||
@@ -34,43 +32,41 @@ function PureSuggestedActions({
 
   const suggestedActions = [
     {
-      title: `Based on today's macroeconomic news`,
-      label: `what sectors are likely to see increased volatility?`,
-      action: `Based on today's macroeconomic news, what sectors are likely to see increased volatility?`,
+      title: 'Map the capital relationships around',
+      label: ' frontier AI infrastructure in Europe',
+      action: 'Map the capital relationships around frontier AI infrastructure in Europe.',
       showAlways: true,
     },
     {
-      title: 'Can you help me build a simple ',
-      label: `momentum trading strategy using Python`,
-      action: `Can you help me build a simple momentum trading strategy using Python`,
+      title: 'Show me the investor pathways connecting',
+      label: ' fintech founders to late-stage capital',
+      action: 'Show me the investor pathways connecting fintech founders to late-stage capital.',
       showAlways: true,
     },
     {
-      title: 'Please analyze this employment agreement',
-      label: 'for legal issues and compliance concerns',
-      action: `Please analyze this employment agreement for legal issues`,
-      showAlways: false, // Only show when document is attached
+      title: 'Analyze this document for control, incentives,',
+      label: ' and governance risk',
+      action: 'Analyze this document for control, incentives, and governance risk.',
+      showAlways: false,
     },
     {
-      title: 'Which technical indicators are most reliable',
-      label: ' for identifying early trend reversals in stocks?',
-      action:
-        'Which technical indicators are most reliable for identifying early trend reversals in stocks?',
+      title: 'Which sectors are seeing the strongest shift in',
+      label: ' capital concentration this quarter?',
+      action: 'Which sectors are seeing the strongest shift in capital concentration this quarter?',
       showAlways: true,
     },
   ];
 
-  // Filter actions based on conditions
   const filteredActions = suggestedActions.filter(
     (action) =>
       action.showAlways ||
-      (action.title.includes('analyze') && hasDocumentAttachments),
+      (action.title.includes('Analyze') && hasDocumentAttachments),
   );
 
   return (
     <div
       data-testid="suggested-actions"
-      className="hidden lg:grid lg:grid-cols-2 gap-2 w-full"
+      className="hidden w-full gap-2 lg:grid lg:grid-cols-2"
     >
       {filteredActions.map((suggestedAction, index) => (
         <motion.div
@@ -87,24 +83,21 @@ function PureSuggestedActions({
 
               if (
                 hasDocumentAttachments &&
-                suggestedAction.title.includes('analyze')
+                suggestedAction.title.includes('Analyze')
               ) {
-                // If we have document attachments and this is an analysis action,
-                // use handleSubmit to include attachments
                 if (handleSubmit) {
                   handleSubmit(undefined, {
                     experimental_attachments: attachments,
                   });
                 }
               } else {
-                // For regular actions without attachments, use append
                 append({
                   role: 'user',
                   content: suggestedAction.action,
                 });
               }
             }}
-            className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+            className="h-auto flex-1 items-start justify-start gap-1 rounded-xl border px-4 py-3.5 text-left text-sm sm:flex-col"
           >
             <div className="flex items-center gap-2">
               <PlusIcon size={16} />

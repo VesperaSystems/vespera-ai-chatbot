@@ -32,8 +32,6 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   }
 
   const getSubscriptionTypeName = (type: number) => {
-    console.log('Subscription type:', type);
-
     switch (Number(type)) {
       case SUBSCRIPTION_TYPES.REGULAR:
         return 'Regular';
@@ -42,18 +40,15 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       case SUBSCRIPTION_TYPES.ENTERPRISE:
         return 'Enterprise';
       default:
-        console.warn('Unknown subscription type:', type);
         return 'Unknown';
     }
   };
-
-  console.log('Session user:', session?.user);
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex flex-row justify-between items-center px-2">
+          <div className="flex flex-row items-center justify-between px-2">
             <div className="flex flex-row items-center gap-2.5">
               <Link
                 href="/"
@@ -61,19 +56,17 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   setOpenMobile(false);
                   router.refresh();
                 }}
-                className="text-lg font-semibold tracking-tight hover:bg-muted/50 rounded-md px-2.5 py-1.5 transition-colors"
+                className="rounded-md px-2.5 py-1.5 text-lg font-semibold tracking-tight transition-colors hover:bg-muted/50"
               >
-                Vespera AI
+                Vespera Mission Control
               </Link>
               {session?.user && session.user.subscriptionType !== undefined && (
                 <Link
                   href="/pricing"
                   onClick={() => setOpenMobile(false)}
-                  className="text-sm font-medium text-red-500 px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                  className="rounded-md border border-red-100 bg-red-50 px-2 py-0.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-100 dark:border-red-900/30 dark:bg-red-950/30 dark:hover:bg-red-950/50"
                 >
-                  {getSubscriptionTypeName(
-                    Number(session.user.subscriptionType),
-                  )}
+                  {getSubscriptionTypeName(Number(session.user.subscriptionType))}
                 </Link>
               )}
             </div>

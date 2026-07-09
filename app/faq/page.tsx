@@ -11,18 +11,16 @@ export default function FAQPage() {
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Find answers to common questions about Vespera AI Chatbot
+          Find answers to common questions about Vespera Mission Control
         </p>
       </div>
 
       <div className="max-w-4xl mx-auto space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>What is Vespera AI Chatbot?</CardTitle>
+            <CardTitle>What is Vespera Mission Control?</CardTitle>
             <CardDescription>
-              Vespera AI is an advanced chatbot platform that helps businesses
-              automate their customer interactions using cutting-edge AI
-              technology.
+              Vespera Mission Control is an operating system for understanding how capital moves through networks of companies, investors, founders, sectors, and time.
             </CardDescription>
           </CardHeader>
         </Card>

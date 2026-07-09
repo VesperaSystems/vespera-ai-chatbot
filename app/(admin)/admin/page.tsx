@@ -1,5 +1,3 @@
-import { auth } from '@/app/(auth)/auth';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import {
   Card,
@@ -11,15 +9,30 @@ import {
 import { Button } from '@/components/ui/button';
 import { Users, CreditCard } from 'lucide-react';
 
-export default async function AdminDashboardPage() {
-  const session = await auth();
+const hasBackendServices = Boolean(
+  process.env.POSTGRES_URL && process.env.AUTH_SECRET,
+);
 
-  if (!session?.user) {
-    redirect('/login');
-  }
-
-  if (!session.user.isAdmin) {
-    redirect('/');
+export default function AdminDashboardPage() {
+  if (!hasBackendServices) {
+    return (
+      <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mission-panel max-w-3xl">
+          <div className="hud-label">Estate Admin</div>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[0.08em] text-[rgba(235,251,255,0.96)]">
+            Admin shell is ready.
+          </h1>
+          <p className="mt-4 text-sm leading-6 text-[rgba(215,251,255,0.64)]">
+            Authentication and database services are not configured in this local repo yet, so admin management is in
+            staging mode. The route structure is in place and can be activated once secrets are added.
+          </p>
+          <div className="mt-6 flex gap-3 text-sm text-[rgba(215,251,255,0.82)]">
+            <Link href="/">Return to graph</Link>
+            <Link href="/config">Open config</Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -27,10 +40,10 @@ export default async function AdminDashboardPage() {
       <div className="space-y-6">
         <div className="border-b pb-4">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Admin Dashboard
+            Estate Admin
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Manage your application settings and user data
+            Manage users, subscriptions, tenants, and estate settings.
           </p>
         </div>
 

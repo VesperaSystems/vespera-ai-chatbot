@@ -18,7 +18,7 @@ import {
 import { MessageCounter } from '@/components/message-counter';
 import { ShareButton } from '@/components/share-button';
 import { FeedbackButton } from '@/components/feedback-button';
-import { PlusIcon, } from '@/components/icons';
+import { PlusIcon } from '@/components/icons';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useWindowSize } from 'usehooks-ts';
 
@@ -29,7 +29,6 @@ function PureChatHeader({
   isReadonly,
   session,
   onModelChange,
-  attachments = [],
 }: {
   chatId: string;
   selectedModelId: string;
@@ -48,29 +47,28 @@ function PureChatHeader({
     setMounted(true);
   }, []);
 
-  const showNewChatButton = mounted && (windowWidth >= 768 || !open);
-  const isLegalTenant = (session as any)?.user?.tenantType === 'legal';
+  const showGraphButton = mounted && (windowWidth >= 768 || !open);
 
   return (
-    <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
+    <header className="sticky top-0 flex items-center gap-2 bg-background/92 px-2 py-1.5 backdrop-blur-md md:px-2">
       <SidebarToggle />
 
-      {showNewChatButton && (
+      {showGraphButton && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              className="order-2 md:order-1 md:px-2 px-2 md:h-fit ml-auto md:ml-0"
+              className="order-2 ml-auto h-fit px-2 md:order-1 md:ml-0 md:px-2"
               onClick={() => {
                 router.push('/');
                 router.refresh();
               }}
             >
               <PlusIcon size={16} />
-              <span className="md:sr-only">New Chat</span>
+              <span className="md:sr-only">Wall Display</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>New Chat</TooltipContent>
+          <TooltipContent>Wall Display</TooltipContent>
         </Tooltip>
       )}
 
@@ -91,8 +89,6 @@ function PureChatHeader({
           className="order-1 md:order-3"
         />
       )}
-
-      {/* Legal editor access removed - only accessible via direct URL */}
 
       {!isReadonly && (
         <div className="order-1 md:order-5">

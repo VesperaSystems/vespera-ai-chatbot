@@ -1,7 +1,6 @@
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { ThemeProvider } from '@/components/theme-provider';
 import { HelpScoutBeacon } from '@/components/helpscout-beacon';
 import { cn } from '@/lib/utils';
 
@@ -9,9 +8,10 @@ import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Vespera Systems',
-  description: 'Quantitative Trading and Research',
+  metadataBase: new URL('https://www.vesperasystems.com'),
+  title: 'Vespera Systems Limited | Intelligence Displays',
+  description:
+    'Company brochure site for Vespera Systems Limited, provider of large-format intelligence displays for private markets and asset management.',
 };
 
 export const viewport = {
@@ -34,8 +34,8 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
 });
 
-const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';
-const DARK_THEME_COLOR = 'hsl(240deg 10% 3.92%)';
+const LIGHT_THEME_COLOR = '#ffffff';
+const DARK_THEME_COLOR = '#ffffff';
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;
@@ -56,29 +56,24 @@ const THEME_COLOR_SCRIPT = `\
 
 const SUPPRESS_ERRORS_SCRIPT = `\
 (function() {
-  // Suppress console errors and warnings to prevent cursor errors in browser
   if (typeof window !== 'undefined') {
     var originalConsoleError = console.error;
     var originalConsoleWarn = console.warn;
-    
+
     console.error = function() {
-      // Only log critical errors, suppress most console errors
       var args = Array.prototype.slice.call(arguments);
-      if (args[0] && typeof args[0] === 'string' && 
+      if (args[0] && typeof args[0] === 'string' &&
           (args[0].includes('Critical') || args[0].includes('Fatal'))) {
         originalConsoleError.apply(console, args);
       }
-      // Silently ignore other errors
     };
-    
+
     console.warn = function() {
-      // Only log critical warnings, suppress most console warnings
       var args = Array.prototype.slice.call(arguments);
-      if (args[0] && typeof args[0] === 'string' && 
+      if (args[0] && typeof args[0] === 'string' &&
           (args[0].includes('Critical') || args[0].includes('Security'))) {
         originalConsoleWarn.apply(console, args);
       }
-      // Silently ignore other warnings
     };
   }
 })();`;
@@ -91,12 +86,8 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      // `next-themes` injects an extra classname to the body element to avoid
-      // visual flicker before hydration. Hence the `suppressHydrationWarning`
-      // prop is necessary to avoid the React hydration mismatch warning.
-      // https://github.com/pacocoursey/next-themes?tab=readme-ov-file#with-app
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} dark`}
     >
       <head>
         <script
@@ -117,18 +108,11 @@ export default async function RootLayout({
           geistMono.variable,
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          <SessionProvider>
-            <main className="flex min-h-screen flex-col">{children}</main>
-            <HelpScoutBeacon />
-          </SessionProvider>
-        </ThemeProvider>
+        <Toaster position="top-center" />
+        <SessionProvider>
+          <main className="flex min-h-screen flex-col">{children}</main>
+          <HelpScoutBeacon />
+        </SessionProvider>
       </body>
     </html>
   );

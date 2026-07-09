@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'FAQ - Vespera AI Chatbot',
+  title: 'FAQ - Vespera Mission Control',
   description:
-    'Find answers to frequently asked questions about Vespera AI Chatbot, our features, pricing, and support.',
+    'Find answers to frequently asked questions about Vespera Mission Control, its capabilities, pricing, and support.',
 };
 
 export default function FAQLayout({

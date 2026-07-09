@@ -444,7 +444,7 @@ function PureMultimodalInput({
                   }
                 }
               }}
-              placeholder="Message Vespera..."
+              placeholder="Query the venture ecosystem..."
               className="min-h-[98px] max-h-[300px] resize-none"
               disabled={status === 'streaming'}
             />

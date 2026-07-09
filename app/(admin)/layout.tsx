@@ -1,21 +1,27 @@
-import { auth } from '@/app/(auth)/auth';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Home } from 'lucide-react';
+
+const hasBackendServices = Boolean(
+  process.env.POSTGRES_URL && process.env.AUTH_SECRET,
+);
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  if (hasBackendServices) {
+    const { auth } = await import('@/app/(auth)/auth');
+    const { redirect } = await import('next/navigation');
+    const session = await auth();
 
-  if (!session?.user) {
-    redirect('/login');
-  }
+    if (!session?.user) {
+      redirect('/login');
+    }
 
-  if (!session.user.isAdmin) {
-    redirect('/');
+    if (!session?.user?.isAdmin) {
+      redirect('/');
+    }
   }
 
   return (
@@ -26,7 +32,7 @@ export default async function AdminLayout({
             <div className="flex items-center space-x-6">
               <Link href="/" className="flex items-center space-x-2">
                 <Home size={20} />
-                <span className="font-semibold">Vespera AI</span>
+                <span className="font-semibold">Vespera Mission Control</span>
               </Link>
               <div className="p-4">
                 <nav className="flex space-x-4">
@@ -51,7 +57,7 @@ export default async function AdminLayout({
                 </nav>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">Admin Dashboard</div>
+            <div className="text-sm text-muted-foreground">Estate Admin</div>
           </div>
         </div>
       </div>

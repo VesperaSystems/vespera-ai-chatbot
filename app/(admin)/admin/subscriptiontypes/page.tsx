@@ -10,7 +10,7 @@ export default async function AdminSubscriptionTypesPage() {
     redirect('/login');
   }
 
-  if (!session.user.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/');
   }
 
