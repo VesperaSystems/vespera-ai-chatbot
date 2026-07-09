@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'gpt-4';
+export const DEFAULT_CHAT_MODEL: string = 'deepseek-v4-pro';
 
 export interface ChatModel {
   id: string;
@@ -9,33 +9,21 @@ export interface ChatModel {
 
 export const chatModels: Array<ChatModel> = [
   {
-    id: 'chat-model',
-    name: 'Basic Chat',
-    description: 'Primary model for all-purpose chat',
+    id: 'deepseek-v4-pro',
+    name: 'DeepSeek V4 Pro',
+    description: 'Deep reasoning for complex analysis and long-horizon research',
     supportsVision: false,
   },
   {
-    id: 'gpt-3.5',
-    name: 'GPT-3.5',
-    description: 'Fast and efficient for general chat',
-    supportsVision: false,
-  },
-  {
-    id: 'gpt-4',
-    name: 'GPT-4',
-    description: 'Advanced model for complex analysis and reasoning',
+    id: 'qwen3-5-397b',
+    name: 'Qwen 3.5 397B',
+    description: 'Flagship multimodal model for chat, retrieval, and agentic workflows',
     supportsVision: true,
   },
   {
-    id: 'gpt-4o',
-    name: 'GPT-4o',
-    description: 'Latest model with enhanced vision and reasoning capabilities',
-    supportsVision: true,
-  },
-  {
-    id: 'chat-model-reasoning',
-    name: 'GPT-4 with Reasoning',
-    description: 'Uses step-by-step reasoning with think tags',
+    id: 'glm-5-2',
+    name: 'GLM 5.2',
+    description: 'Strong reasoning, long-context understanding, and advanced tool use',
     supportsVision: true,
   },
 ];
@@ -53,7 +41,7 @@ export function modelSupportsVision(modelId: string): boolean {
  */
 export function getDefaultModelForUser(tenantType?: string): string {
   if (tenantType === 'legal') {
-    return 'gpt-4o';
+    return 'qwen3-5-397b';
   }
   return DEFAULT_CHAT_MODEL;
 }

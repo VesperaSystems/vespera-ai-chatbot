@@ -10,9 +10,9 @@ import { isTestEnvironment } from '../constants';
 // NEBIUS_API_KEY is set (or AI_PROVIDER=nebius); otherwise OpenAI is used.
 // Model choices can be overridden per deployment without a code change.
 const NEBIUS_BASE_URL = 'https://api.studio.nebius.com/v1/';
-const NEBIUS_CHAT_MODEL = 'deepseek-ai/DeepSeek-V3-0324';
-const NEBIUS_SMALL_MODEL = 'meta-llama/Meta-Llama-3.1-8B-Instruct';
-const NEBIUS_REASONING_MODEL = 'deepseek-ai/DeepSeek-R1-0528';
+const NEBIUS_CHAT_MODEL = 'deepseek-ai/DeepSeek-V4-Pro';
+const NEBIUS_SMALL_MODEL = 'Qwen/Qwen3-30B-A3B-Instruct-2507';
+const NEBIUS_REASONING_MODEL = 'Qwen/Qwen3-Next-80B-A3B-Thinking';
 
 const useNebius =
   process.env.AI_PROVIDER?.toLowerCase() === 'nebius' ||
@@ -47,6 +47,11 @@ const providerFactory = () => {
 
     return customProvider({
       languageModels: {
+        // Picker models
+        'deepseek-v4-pro': nebius('deepseek-ai/DeepSeek-V4-Pro'),
+        'qwen3-5-397b': nebius('Qwen/Qwen3.5-397B-A17B'),
+        'glm-5-2': nebius('zai-org/GLM-5.2'),
+        // Internal + legacy ids (stored on older chats)
         'chat-model': nebius(chatModel),
         'chat-model-reasoning': wrapLanguageModel({
           model: nebius(reasoningModel),
@@ -66,6 +71,9 @@ const providerFactory = () => {
 
   return customProvider({
     languageModels: {
+      'deepseek-v4-pro': openai('gpt-4o'),
+      'qwen3-5-397b': openai('gpt-4o'),
+      'glm-5-2': openai('gpt-4o'),
       'chat-model': openai('gpt-4o'),
       'chat-model-reasoning': wrapLanguageModel({
         model: openai('gpt-4o'),
