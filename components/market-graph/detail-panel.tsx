@@ -1,5 +1,5 @@
 import { formatCurrency, formatTypeLabel } from "@/lib/market-graph";
-import { VentureEdge, VentureNode } from "@/types/venture";
+import type { VentureEdge, VentureNode } from "@/types/venture";
 
 interface DetailPanelProps {
   node: VentureNode | null;

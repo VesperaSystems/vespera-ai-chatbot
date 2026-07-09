@@ -1,4 +1,4 @@
-import { VentureEdge, VentureNode } from "@/types/venture";
+import type { VentureEdge, VentureNode } from "@/types/venture";
 
 export const ventureNodes: VentureNode[] = [
   {

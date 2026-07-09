@@ -1,6 +1,6 @@
 "use client";
 
-import { MarketGraphFilters } from "@/types/venture";
+import type { MarketGraphFilters } from "@/types/venture";
 
 interface FilterPanelProps {
   filters: MarketGraphFilters;

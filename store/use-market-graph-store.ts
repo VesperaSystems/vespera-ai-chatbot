@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 import { defaultFilters } from "@/lib/market-graph";
-import { MarketGraphFilters } from "@/types/venture";
+import type { MarketGraphFilters } from "@/types/venture";
 
 interface MarketGraphState {
   filters: MarketGraphFilters;
