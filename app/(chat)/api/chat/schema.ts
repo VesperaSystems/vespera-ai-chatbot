@@ -1,4 +1,19 @@
 import { z } from 'zod';
+import { chatModels } from '@/lib/ai/models';
+
+// Legacy ids remain accepted so older chats and stale model cookies keep working.
+const legacyChatModelIds = [
+  'chat-model',
+  'gpt-3.5',
+  'gpt-4',
+  'gpt-4o',
+  'chat-model-reasoning',
+];
+
+const chatModelIds = [
+  ...chatModels.map((model) => model.id),
+  ...legacyChatModelIds,
+] as [string, ...string[]];
 
 const textPartSchema = z.object({
   text: z.string().min(1).max(2000),
@@ -32,13 +47,7 @@ export const postRequestBodySchema = z.object({
       )
       .optional(),
   }),
-  selectedChatModel: z.enum([
-    'chat-model',
-    'gpt-3.5',
-    'gpt-4',
-    'gpt-4o',
-    'chat-model-reasoning',
-  ]),
+  selectedChatModel: z.enum(chatModelIds),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
 
